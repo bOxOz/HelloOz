@@ -28,7 +28,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	wcex.lpszClassName = strTitle.c_str();
 	RegisterClassExW(&wcex);
 
-	RECT rcWindow = { 0, 0, (LONG)hello.m_nWidth, (LONG)hello.m_nHeight };
+	RECT rcWindow = { 0, 0, static_cast<LONG>(hello.GetWidth()), static_cast<LONG>(hello.GetHeight()) };
 	AdjustWindowRect(&rcWindow, WS_OVERLAPPEDWINDOW, FALSE);
 
 	// Create the window and store a handle to it.
