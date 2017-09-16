@@ -15,7 +15,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
-	std::wstring strTitle = L"Hello";
 	HelloMain hello(1280, 720);
 
     // Perform application initialization:
@@ -25,7 +24,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	wcex.lpfnWndProc = WndProc;
 	wcex.hInstance = hInstance;
 	wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
-	wcex.lpszClassName = strTitle.c_str();
+	wcex.lpszClassName = L"Hello";
 	RegisterClassExW(&wcex);
 
 	RECT rcWindow = { 0, 0, static_cast<LONG>(hello.GetWidth()), static_cast<LONG>(hello.GetHeight()) };
@@ -34,7 +33,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	// Create the window and store a handle to it.
 	m_hwnd = CreateWindow(
 		wcex.lpszClassName,
-		strTitle.c_str(),
+		L"Hello",
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
@@ -51,7 +50,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	ShowWindow(m_hwnd, nCmdShow);
 
     // Main message loop:
-	MSG msg = {};
+	MSG msg {};
 	while (msg.message != WM_QUIT)
 	{
 		// Process any messages in the queue.
@@ -67,6 +66,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	hello.OnDestroy();
 
+	_CrtDumpMemoryLeaks();
     return (int) msg.wParam;
 }
 
