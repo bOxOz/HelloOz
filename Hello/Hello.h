@@ -44,6 +44,7 @@ private:
 	static const UINT nFrameCount = 2;
 
 	Microsoft::WRL::ComPtr<ID3D12Device>				m_pDevice;
+	Microsoft::WRL::ComPtr<ID3D12RootSignature>			m_pRootSignature;
 	Microsoft::WRL::ComPtr<IDXGISwapChain3>				m_pSwapChain;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>		m_pRTVHeap;
 	Microsoft::WRL::ComPtr<ID3D12Resource>				m_pRenderTargets[nFrameCount];

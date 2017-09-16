@@ -19,7 +19,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	HelloMain hello(1280, 720);
 
     // Perform application initialization:
-	WNDCLASSEX wcex = { 0 };
+	WNDCLASSEX wcex { 0 };
 	wcex.cbSize = sizeof(WNDCLASSEX);
 	wcex.style = CS_HREDRAW | CS_VREDRAW;
 	wcex.lpfnWndProc = WndProc;
