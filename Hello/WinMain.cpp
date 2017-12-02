@@ -6,6 +6,7 @@
 #include "Hello.h"
 
 HWND m_hwnd = nullptr;
+HelloMain* g_HelloMain = nullptr;
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -15,7 +16,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
-	HelloMain hello(1280, 720);
+	g_HelloMain = new HelloMain(1280, 720);
 
     // Perform application initialization:
 	WNDCLASSEX wcex { 0 };
@@ -27,7 +28,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	wcex.lpszClassName = L"Hello";
 	RegisterClassExW(&wcex);
 
-	RECT rcWindow = { 0, 0, static_cast<LONG>(hello.GetWidth()), static_cast<LONG>(hello.GetHeight()) };
+	RECT rcWindow = { 0, 0, static_cast<LONG>(g_HelloMain->GetWidth()), static_cast<LONG>(g_HelloMain->GetHeight()) };
 	AdjustWindowRect(&rcWindow, WS_OVERLAPPEDWINDOW, FALSE);
 
 	// Create the window and store a handle to it.
@@ -45,7 +46,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		nullptr);
 
 	// Initialize the sample. OnInit is defined in each child-implementation of DXSample.
-	hello.OnInit();
+	g_HelloMain->OnInit();
 
 	ShowWindow(m_hwnd, nCmdShow);
 
@@ -60,11 +61,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			DispatchMessage(&msg);
 		}
 
-		hello.OnUpdate();
-		hello.OnRender();
+		g_HelloMain->OnUpdate();
+		g_HelloMain->OnRender();
 	}
 
-	hello.OnDestroy();
+	g_HelloMain->OnDestroy();
+	delete g_HelloMain;
 
 	_CrtDumpMemoryLeaks();
     return (int) msg.wParam;

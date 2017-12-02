@@ -1,19 +1,19 @@
 #include "stdafx.h"
 #include "Hello.h"
 
-using namespace Microsoft::WRL;
-using namespace DirectX;
+#include "Camera.h"
+#include "Box.h"
+//#include "Sphere.h"
 
 HelloMain::HelloMain(UINT nWidth, UINT nHeight)
 	: m_nWidth(nWidth), m_nHeight(nHeight)
-	, m_pDevice(nullptr), m_pRootSignature(nullptr), m_pSwapChain(nullptr), m_pRTVHeap(nullptr), m_pPipelineState(nullptr)
+	, m_pDevice(nullptr), m_pRootSignature(nullptr), m_pSwapChain(nullptr), m_pPipelineState(nullptr)
+	, m_pRTVHeap(nullptr), m_pCBVHeap(nullptr)
 	, m_pCommandAllocator(nullptr), m_pCommandQueue(nullptr), m_pCommandList(nullptr), m_pFence(nullptr)
 	, m_nFrameIndex(-1), m_nRTVDescriptorSize(0)
 	, m_pFenceEvent(nullptr), m_nFenceValue(0)
-	, m_pVB(nullptr)
+	, m_pTransConstantBuffer(nullptr), m_pCBVDataBegin(nullptr), m_pCamera(nullptr), m_pBox(nullptr)
 {
-	ZeroMemory(m_pRenderTargets, 0);
-	ZeroMemory(&m_tVBView, 0);
 	m_fAspectRatio = static_cast<FLOAT>(m_nWidth) / static_cast<FLOAT>(m_nHeight);
 }
 
@@ -27,11 +27,16 @@ VOID HelloMain::OnInit()
 	LoadPipeline();
 	LoadAssets();
 
+	m_pCamera = new Camera(0.1f, 1000.f, XMFLOAT3(5.f, 5.f, -5.f), XMFLOAT3(0.f, 0.f, 0.0f));
+	m_pBox = new Box();
+	m_pBox->CreateShape();
+
 	OutputDebugString(L"Init Device\n");
 }
 
 VOID HelloMain::OnUpdate()
 {
+	m_pBox->SetTransConstantBuffer(m_pCBVDataBegin, m_pCamera->GetProj(), m_pCamera->GetView());
 }
 
 VOID HelloMain::OnRender()
@@ -51,6 +56,9 @@ VOID HelloMain::OnDestroy()
 	WaitForPreviousFrame();
 	CloseHandle(m_pFenceEvent);
 
+	delete m_pCamera;
+	delete m_pBox;
+
 	OutputDebugString(L"Destroy Device\n");
 }
 
@@ -61,6 +69,11 @@ VOID HelloMain::PopulateCommandList()
 
 	// Set necessary state.
 	m_pCommandList->SetGraphicsRootSignature(m_pRootSignature.Get());
+
+	ID3D12DescriptorHeap* ppHeaps[] = { m_pCBVHeap.Get() };
+	m_pCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+
+	m_pCommandList->SetGraphicsRootDescriptorTable(0, m_pCBVHeap->GetGPUDescriptorHandleForHeapStart());
 
 	D3D12_VIEWPORT vp { 0.f, 0.f, static_cast<FLOAT>(m_nWidth), static_cast<FLOAT>(m_nHeight) };
 	m_pCommandList->RSSetViewports(1, &vp);
@@ -87,8 +100,9 @@ VOID HelloMain::PopulateCommandList()
 	const FLOAT clearColor[] { 0.0f, 0.2f, 0.4f, 1.0f };
 	m_pCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 	m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	m_pCommandList->IASetVertexBuffers(0, 1, &m_tVBView);
-	m_pCommandList->DrawInstanced(3, 1, 0, 0);
+	m_pCommandList->IASetVertexBuffers(0, 1, &m_pBox->m_tVBView);
+	m_pCommandList->IASetIndexBuffer(&m_pBox->m_tIBView);
+	m_pCommandList->DrawIndexedInstanced(m_pBox->m_nIBSize, 1, 0, 0, 0);
 
 	// Indicate that the back buffer will now be used to present.
 	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
@@ -192,6 +206,14 @@ VOID HelloMain::LoadPipeline()
 		// Create a render target view (RTV) descriptor heap.
 		ThrowIfFailed(m_pDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_pRTVHeap)));
 		m_nRTVDescriptorSize = m_pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+		// Describe and create a constant buffer view (CBV) descriptor heap.
+		// Flags indicate that this descriptor heap can be bound to the pipeline 
+		// and that descriptors contained in it can be referenced by a root table.
+
+		// D3D12_DESCRIPTOR_HEAP_DESC { Type, NumDescriptors, Flags, NodeMask }
+		D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, 0 };
+		ThrowIfFailed(m_pDevice->CreateDescriptorHeap(&cbvHeapDesc, IID_PPV_ARGS(&m_pCBVHeap)));
 	}
 
 	// Frame Resources
@@ -215,12 +237,29 @@ VOID HelloMain::LoadAssets()
 {
 	// Create an empty root signature.
 	{
-		// D3D12_ROOT_SIGNATURE_DESC { NumParameters, pParameters, NumStaticSamplers, pStaticSamplers, Flags }
-		D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc{ 0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT };
-		
+		D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData {};
+
+		// D3D12_DESCRIPTOR_RANGE1 { RangeType, NumDescriptors, BaseShaderRegister, RegisterSpace, Flags, OffsetInDescriptorsFromTableStart }
+		D3D12_DESCRIPTOR_RANGE1 ranges[1] { D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC, D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND };
+
+		// D3D12_ROOT_PARAMETER1 { ParameterType, (DescriptorTable, Constants, Descriptor), ShaderVisibility }
+		D3D12_ROOT_PARAMETER1 rootParameters[1] { D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE, 1, &ranges[0], D3D12_SHADER_VISIBILITY_VERTEX };
+
+		// Allow input layout and deny uneccessary access to certain pipeline stages.
+		D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
+			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+			D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
+			D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
+			D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
+			D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
+
+		// D3D12_VERSIONED_ROOT_SIGNATURE_DESC { Version, (Desc_1_0, Desc_1_1 { NumParameters, *pParameters, NumStaticSamplers, *pStaticSamplers, Flags  }) }
+		D3D12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc{
+			D3D_ROOT_SIGNATURE_VERSION_1_1, _countof(rootParameters), (D3D12_ROOT_PARAMETER*)rootParameters, 0, nullptr, rootSignatureFlags };
+
 		ComPtr<ID3DBlob> pSignature;
 		ComPtr<ID3DBlob> pError;
-		ThrowIfFailed(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &pSignature, &pError));
+		ThrowIfFailed(D3D12SerializeVersionedRootSignature(&rootSignatureDesc, &pSignature, &pError));
 		ThrowIfFailed(m_pDevice->CreateRootSignature(0, pSignature->GetBufferPointer(), pSignature->GetBufferSize(), IID_PPV_ARGS(&m_pRootSignature)));
 	}
 
@@ -286,43 +325,36 @@ VOID HelloMain::LoadAssets()
 		psoDesc.InputLayout = D3D12_INPUT_LAYOUT_DESC{ inputElementDescs, _countof(inputElementDescs) };
 		psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 		psoDesc.NumRenderTargets = 1;
-		psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+		psoDesc.RTVFormats[0] = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		psoDesc.SampleDesc.Count = 1;
 
 		ThrowIfFailed(m_pDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pPipelineState)));
 	}
 
-	// Create the vertex buffer.
+	// Create the constant buffer.
 	{
-		// Vertex { vPosition, vColor }
-		Vertex arrVertices[]
-		{
-			{ { 0.0f, 0.25f * m_fAspectRatio, 0.0f },{ 1.0f, 0.0f, 0.0f, 1.0f } },
-			{ { 0.25f, -0.25f * m_fAspectRatio, 0.0f },{ 0.0f, 1.0f, 0.0f, 1.0f } },
-			{ { -0.25f, -0.25f * m_fAspectRatio, 0.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } }
-		};
-
-		const UINT nVBSize = sizeof(arrVertices);
-
 		// D3D12_HEAP_PROPERTIES { Type, CPUPageProperty, MemoryPoolPreference, CreationNodeMask, VisibleNodeMask }
 		D3D12_HEAP_PROPERTIES heapProperties{ D3D12_HEAP_TYPE_UPLOAD, D3D12_CPU_PAGE_PROPERTY_UNKNOWN, D3D12_MEMORY_POOL_UNKNOWN, 1, 1 };
 
 		// D3D12_RESOURCE_DESC { Dimension, Alignment, Width, Height, DepthOrArraySize, MipLevels, 
 		//						 Format, SampleDesc.Count, SampleDesc.Quality, Layout, Flags }
-		D3D12_RESOURCE_DESC resourceDesc{ D3D12_RESOURCE_DIMENSION_BUFFER, 0, nVBSize, 1, 1, 1,
+		D3D12_RESOURCE_DESC resourceDesc{ D3D12_RESOURCE_DIMENSION_BUFFER, 0, 1024 * 64, 1, 1, 1,
 			DXGI_FORMAT_UNKNOWN, 1, 0, D3D12_TEXTURE_LAYOUT_ROW_MAJOR, D3D12_RESOURCE_FLAG_NONE };
 
 		ThrowIfFailed(m_pDevice->CreateCommittedResource(
-			&heapProperties, D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&m_pVB)));
+			&heapProperties, D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&m_pTransConstantBuffer)));
 
-		UINT8* pVertexDataBegin;
-		D3D12_RANGE readRange{ 0, 0 };
-		ThrowIfFailed(m_pVB->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
-		memcpy(pVertexDataBegin, arrVertices, nVBSize);
-		m_pVB->Unmap(0, nullptr);
+		// Describe and create a constant buffer view.
+		// CB size is required to be 256-byte aligned.
 
-		// D3D12_VERTEX_BUFFER_VIEW { BufferLocation, SizeInBytes, StrideInBytes } 
-		m_tVBView = { m_pVB->GetGPUVirtualAddress(), nVBSize, sizeof(Vertex) };
+		// D3D12_CONSTANT_BUFFER_VIEW_DESC { BufferLocation, SizeInBytes }
+		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc { m_pTransConstantBuffer->GetGPUVirtualAddress(), (sizeof(TransConstantBuffer) + 255) & ~255 };
+		m_pDevice->CreateConstantBufferView(&cbvDesc, m_pCBVHeap->GetCPUDescriptorHandleForHeapStart());
+
+		// Map and initialize the constant buffer. We don't unmap this until the
+		// app closes. Keeping things mapped for the lifetime of the resource is okay.
+		D3D12_RANGE readRange{ 0, 0 };		// We do not intend to read from this resource on the CPU.
+		ThrowIfFailed(m_pTransConstantBuffer->Map(0, &readRange, reinterpret_cast<void**>(&m_pCBVDataBegin)));
 	}
 
 	// Command List
@@ -364,7 +396,7 @@ VOID HelloMain::GetHardwareAdapter(IDXGIFactory2* pFactory, IDXGIAdapter1** ppAd
 
 // End - Init Device
 
-VOID HelloMain::ThrowIfFailed(HRESULT hr)
+VOID ThrowIfFailed(HRESULT hr)
 {
 	if (FAILED(hr))
 		throw std::exception();

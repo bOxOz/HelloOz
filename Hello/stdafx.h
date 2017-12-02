@@ -22,4 +22,32 @@
 #include <string>
 #include <wrl.h>
 
+using namespace Microsoft::WRL;
+using namespace DirectX;
+
 extern HWND m_hwnd;
+
+class HelloMain;
+extern HelloMain* g_HelloMain;
+
+#define GetMainDevice() g_HelloMain->GetDevice()
+
+struct Vertex
+{
+	XMFLOAT3 vPosition;
+	XMFLOAT4 vColor;
+};
+
+struct Index
+{
+	UINT _1;
+	UINT _2;
+	UINT _3;
+};
+
+struct TransConstantBuffer 
+{
+	XMFLOAT4X4 matWorld;
+	XMFLOAT4X4 matView;
+	XMFLOAT4X4 matProj;
+};

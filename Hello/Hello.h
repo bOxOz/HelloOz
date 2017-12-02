@@ -1,11 +1,7 @@
 #pragma once
 
-struct Vertex
-{
-	DirectX::XMFLOAT3 vPosition;
-	DirectX::XMFLOAT4 vColor;
-};
-
+class Camera;
+class Box;
 class HelloMain
 {
 public:
@@ -22,6 +18,7 @@ public:
 
 	UINT GetWidth()	{ return m_nWidth; }
 	UINT GetHeight() { return m_nHeight; }
+	ComPtr<ID3D12Device> GetDevice() { return m_pDevice; }
 
 private:
 	VOID PopulateCommandList();
@@ -32,27 +29,29 @@ private:
 	VOID LoadAssets();
 	VOID GetHardwareAdapter(IDXGIFactory2* pFactory, IDXGIAdapter1** ppAdapter);
 
-	VOID ThrowIfFailed(HRESULT hr);
-
 	UINT	m_nWidth;
 	UINT	m_nHeight;
 	FLOAT	m_fAspectRatio;
 
-	Microsoft::WRL::ComPtr<ID3D12Resource>	m_pVB;
-	D3D12_VERTEX_BUFFER_VIEW				m_tVBView;
+	Box*	m_pBox;
+	Camera*	m_pCamera;
 
 	static const UINT nFrameCount = 2;
 
-	Microsoft::WRL::ComPtr<ID3D12Device>				m_pDevice;
-	Microsoft::WRL::ComPtr<ID3D12RootSignature>			m_pRootSignature;
-	Microsoft::WRL::ComPtr<IDXGISwapChain3>				m_pSwapChain;
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>		m_pRTVHeap;
-	Microsoft::WRL::ComPtr<ID3D12Resource>				m_pRenderTargets[nFrameCount];
-	Microsoft::WRL::ComPtr<ID3D12PipelineState>			m_pPipelineState;
-	Microsoft::WRL::ComPtr<ID3D12CommandAllocator>		m_pCommandAllocator;
-	Microsoft::WRL::ComPtr<ID3D12CommandQueue>			m_pCommandQueue;
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>	m_pCommandList;
-	Microsoft::WRL::ComPtr<ID3D12Fence>					m_pFence;
+	ComPtr<ID3D12Device>				m_pDevice;
+	ComPtr<ID3D12RootSignature>			m_pRootSignature;
+	ComPtr<IDXGISwapChain3>				m_pSwapChain;
+	ComPtr<ID3D12DescriptorHeap>		m_pRTVHeap;
+	ComPtr<ID3D12DescriptorHeap>		m_pCBVHeap;
+	ComPtr<ID3D12PipelineState>			m_pPipelineState;
+	ComPtr<ID3D12CommandAllocator>		m_pCommandAllocator;
+	ComPtr<ID3D12CommandQueue>			m_pCommandQueue;
+	ComPtr<ID3D12GraphicsCommandList>	m_pCommandList;
+	ComPtr<ID3D12Fence>					m_pFence;
+
+	ComPtr<ID3D12Resource>				m_pRenderTargets[nFrameCount];
+	ComPtr<ID3D12Resource>				m_pTransConstantBuffer;
+	UINT8*								m_pCBVDataBegin;
 
 	UINT m_nFrameIndex;
 	UINT m_nRTVDescriptorSize;
@@ -60,3 +59,5 @@ private:
 	HANDLE m_pFenceEvent;
 	UINT64 m_nFenceValue;
 };
+
+VOID ThrowIfFailed(HRESULT hr);
