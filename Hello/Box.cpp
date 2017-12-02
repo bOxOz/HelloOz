@@ -4,13 +4,18 @@
 
 Box::Box()
 	: m_pVB(nullptr), m_pIB(nullptr)
-	, m_nVBSize(0), m_nIBSize(0)
+	, m_nVBSize(0), m_nIBSize(0), m_nIdxCnt(0)
 {
 	XMStoreFloat4x4(&m_matWorld, XMMatrixIdentity());
 }
 
 Box::~Box()
 {
+}
+
+void Box::SetScale(FLOAT fScale)
+{
+	XMStoreFloat4x4(&m_matWorld, XMMatrixScaling(fScale, fScale, fScale));
 }
 
 void Box::SetTransConstantBuffer(UINT8* pCBVDataBegin, const XMFLOAT4X4& matProj, const XMFLOAT4X4& matView)
@@ -23,21 +28,20 @@ void Box::SetTransConstantBuffer(UINT8* pCBVDataBegin, const XMFLOAT4X4& matProj
 	memcpy(pCBVDataBegin, &cb, sizeof(cb));
 }
 
-void Box::CreateShape()
+void Box::CreateShape(const XMFLOAT4& vColor, BOOL bBackCull)
 {
 	// Create the vertex buffer.
 	{
-		// Vertex { vPosition, vColor }
 		Vertex arrVertices[]
 		{
-			{ { -0.5f, 0.5f, -0.5f },{ 1.0f, 0.0f, 0.0f, 1.0f } },
-			{ { 0.5f, 0.5f, -0.5f },{ 0.0f, 1.0f, 0.0f, 1.0f } },
-			{ { 0.5f, -0.5f, -0.5f },{ 0.0f, 0.0f, 1.0f, 1.0f } },
-			{ { -0.5f, -0.5f, -0.5f },{ 1.0f, 1.0f, 0.0f, 1.0f } },
-			{ { -0.5f, 0.5f, 0.5f },{ 1.0f, 0.0f, 1.0f, 1.0f } },
-			{ { 0.5f, 0.5f, 0.5f },{ 0.0f, 1.0f, 1.0f, 1.0f } },
-			{ { 0.5f, -0.5f, 0.5f },{ 0.0f, 0.0f, 0.0f, 1.0f } },
-			{ { -0.5f, -0.5f, 0.5f },{ 1.0f, 1.0f, 1.0f, 1.0f } }
+			{ { -0.5f, 0.5f, -0.5f },	vColor },
+			{ { 0.5f, 0.5f, -0.5f },	vColor },
+			{ { 0.5f, -0.5f, -0.5f },	vColor },
+			{ { -0.5f, -0.5f, -0.5f },	vColor },
+			{ { -0.5f, 0.5f, 0.5f },	vColor },
+			{ { 0.5f, 0.5f, 0.5f },		vColor },
+			{ { 0.5f, -0.5f, 0.5f },	vColor },
+			{ { -0.5f, -0.5f, 0.5f },	vColor }
 		};
 
 		m_nVBSize = sizeof(arrVertices);
@@ -64,7 +68,7 @@ void Box::CreateShape()
 	}
 
 	{
-		UINT arrIndex[]{ 
+		UINT arrIndex[]{
 			1, 5, 6,
 			1, 6, 2,
 			4, 0, 3,
@@ -78,7 +82,28 @@ void Box::CreateShape()
 			0, 1, 2,
 			0, 2, 3
 		};
+		
+		if(!bBackCull)
+		{
+			UINT arrFrontCullIndex[]{
+				6, 5, 1,
+				2, 6, 1,
+				3, 0, 4,
+				7, 3, 4,
+				1, 5, 4,
+				0, 1, 4,
+				6, 2, 3,
+				7, 6, 3,
+				5, 6, 7,
+				4, 5, 7,
+				2, 1, 0,
+				3, 2, 0
+			};
+
+			memcpy(arrIndex, arrFrontCullIndex, sizeof(arrIndex));
+		};
 		m_nIBSize = sizeof(arrIndex);
+		m_nIdxCnt = sizeof(arrIndex) / sizeof(UINT);
 
 		// D3D12_HEAP_PROPERTIES { Type, CPUPageProperty, MemoryPoolPreference, CreationNodeMask, VisibleNodeMask }
 		D3D12_HEAP_PROPERTIES heapProperties{ D3D12_HEAP_TYPE_UPLOAD, D3D12_CPU_PAGE_PROPERTY_UNKNOWN, D3D12_MEMORY_POOL_UNKNOWN, 1, 1 };

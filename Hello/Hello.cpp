@@ -8,11 +8,12 @@
 HelloMain::HelloMain(UINT nWidth, UINT nHeight)
 	: m_nWidth(nWidth), m_nHeight(nHeight)
 	, m_pDevice(nullptr), m_pRootSignature(nullptr), m_pSwapChain(nullptr), m_pPipelineState(nullptr)
-	, m_pRTVHeap(nullptr), m_pCBVHeap(nullptr)
+	, m_pRTVHeap(nullptr), m_pDSVHeap(nullptr), m_pCBVHeap(nullptr)
 	, m_pCommandAllocator(nullptr), m_pCommandQueue(nullptr), m_pCommandList(nullptr), m_pFence(nullptr)
 	, m_nFrameIndex(-1), m_nRTVDescriptorSize(0)
 	, m_pFenceEvent(nullptr), m_nFenceValue(0)
-	, m_pTransConstantBuffer(nullptr), m_pCBVDataBegin(nullptr), m_pCamera(nullptr), m_pBox(nullptr)
+	, m_pDepthStencilBuffer(nullptr), m_pTransConstantBuffer(nullptr), m_pCBVDataBegin(nullptr)
+	, m_pCamera(nullptr), m_pBox(nullptr), m_pRoom(nullptr)
 {
 	m_fAspectRatio = static_cast<FLOAT>(m_nWidth) / static_cast<FLOAT>(m_nHeight);
 }
@@ -27,23 +28,31 @@ VOID HelloMain::OnInit()
 	LoadPipeline();
 	LoadAssets();
 
-	m_pCamera = new Camera(0.1f, 1000.f, XMFLOAT3(5.f, 5.f, -5.f), XMFLOAT3(0.f, 0.f, 0.0f));
+	m_pCamera = new Camera(0.1f, 1000.f, XMFLOAT3(10.f, 10.f, -10.f), XMFLOAT3(0.f, 0.f, 0.0f));
 	m_pBox = new Box();
-	m_pBox->CreateShape();
+	m_pRoom = new Box();
+
+	m_pBox->CreateShape(XMFLOAT4(0.9f, 0.8f, 0.f, 1.f));
+
+	m_pRoom->CreateShape(XMFLOAT4(0.95f, 0.95f, 0.9f, 1.f), FALSE);
+	m_pRoom->SetScale(12.f);
 
 	OutputDebugString(L"Init Device\n");
 }
 
 VOID HelloMain::OnUpdate()
 {
-	m_pBox->SetTransConstantBuffer(m_pCBVDataBegin, m_pCamera->GetProj(), m_pCamera->GetView());
 }
 
 VOID HelloMain::OnRender()
 {
-	PopulateCommandList();
+	PopulateCommandList1();
 
 	ID3D12CommandList* ppCommandLists[] { m_pCommandList.Get() };
+	m_pCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+	WaitForPreviousFrame();
+
+	PopulateCommandList2();
 	m_pCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
 	ThrowIfFailed(m_pSwapChain->Present(1, 0));
@@ -58,11 +67,12 @@ VOID HelloMain::OnDestroy()
 
 	delete m_pCamera;
 	delete m_pBox;
+	delete m_pRoom;
 
 	OutputDebugString(L"Destroy Device\n");
 }
 
-VOID HelloMain::PopulateCommandList()
+VOID HelloMain::PopulateCommandList1()
 {
 	ThrowIfFailed(m_pCommandAllocator->Reset());
 	ThrowIfFailed(m_pCommandList->Reset(m_pCommandAllocator.Get(), m_pPipelineState.Get()));
@@ -75,7 +85,7 @@ VOID HelloMain::PopulateCommandList()
 
 	m_pCommandList->SetGraphicsRootDescriptorTable(0, m_pCBVHeap->GetGPUDescriptorHandleForHeapStart());
 
-	D3D12_VIEWPORT vp { 0.f, 0.f, static_cast<FLOAT>(m_nWidth), static_cast<FLOAT>(m_nHeight) };
+	D3D12_VIEWPORT vp { 0.f, 0.f, static_cast<FLOAT>(m_nWidth), static_cast<FLOAT>(m_nHeight), 0.f, 1.f };
 	m_pCommandList->RSSetViewports(1, &vp);
 
 	D3D12_RECT rc { 0, 0, static_cast<LONG>(m_nWidth), static_cast<LONG>(m_nHeight) };
@@ -94,15 +104,75 @@ VOID HelloMain::PopulateCommandList()
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_pRTVHeap->GetCPUDescriptorHandleForHeapStart());
 	rtvHandle.ptr += m_nFrameIndex * m_nRTVDescriptorSize;
 
-	m_pCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_pDSVHeap->GetCPUDescriptorHandleForHeapStart());
+
+	m_pCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+	m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// Record commands
-	const FLOAT clearColor[] { 0.0f, 0.2f, 0.4f, 1.0f };
+	const FLOAT clearColor[] { 0.f, 0.f, 0.f, 1.0f };
 	m_pCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-	m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_pCommandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.f, 0, 0, nullptr);
+
+	m_pBox->SetTransConstantBuffer(m_pCBVDataBegin, m_pCamera->GetProj(), m_pCamera->GetView());
 	m_pCommandList->IASetVertexBuffers(0, 1, &m_pBox->m_tVBView);
 	m_pCommandList->IASetIndexBuffer(&m_pBox->m_tIBView);
-	m_pCommandList->DrawIndexedInstanced(m_pBox->m_nIBSize, 1, 0, 0, 0);
+	m_pCommandList->DrawIndexedInstanced(m_pBox->m_nIdxCnt, 1, 0, 0, 0);
+
+	// Indicate that the back buffer will now be used to present.
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+	m_pCommandList->ResourceBarrier(1, &barrier);
+
+	ThrowIfFailed(m_pCommandList->Close());
+}
+
+VOID HelloMain::PopulateCommandList2()
+{
+	ThrowIfFailed(m_pCommandAllocator->Reset());
+	ThrowIfFailed(m_pCommandList->Reset(m_pCommandAllocator.Get(), m_pPipelineState.Get()));
+
+	// Set necessary state.
+	m_pCommandList->SetGraphicsRootSignature(m_pRootSignature.Get());
+
+	ID3D12DescriptorHeap* ppHeaps[] = { m_pCBVHeap.Get() };
+	m_pCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+
+	m_pCommandList->SetGraphicsRootDescriptorTable(0, m_pCBVHeap->GetGPUDescriptorHandleForHeapStart());
+
+	D3D12_VIEWPORT vp{ 0.f, 0.f, static_cast<FLOAT>(m_nWidth), static_cast<FLOAT>(m_nHeight), 0.f, 1.f };
+	m_pCommandList->RSSetViewports(1, &vp);
+
+	D3D12_RECT rc{ 0, 0, static_cast<LONG>(m_nWidth), static_cast<LONG>(m_nHeight) };
+	m_pCommandList->RSSetScissorRects(1, &rc);
+
+	// Indicate that the back buffer will be used as a render target.
+	// D3D12_RESOURCE_TRANSITION_BARRIER { pResource, Subresource, StateBefore, StateAfter }
+	D3D12_RESOURCE_TRANSITION_BARRIER transBarrier{ m_pRenderTargets[m_nFrameIndex].Get(), D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES,
+		D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET };
+
+	// D3D12_RESOURCE_BARRIER { Type, Flags, union(Transition, Aliasing, UAV) }
+	D3D12_RESOURCE_BARRIER barrier{ D3D12_RESOURCE_BARRIER_TYPE_TRANSITION, D3D12_RESOURCE_BARRIER_FLAG_NONE, transBarrier };
+
+	m_pCommandList->ResourceBarrier(1, &barrier);
+
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_pRTVHeap->GetCPUDescriptorHandleForHeapStart());
+	rtvHandle.ptr += m_nFrameIndex * m_nRTVDescriptorSize;
+
+	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_pDSVHeap->GetCPUDescriptorHandleForHeapStart());
+
+	m_pCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+	m_pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	// Record commands
+	//const FLOAT clearColor[]{ 0.0f, 0.2f, 0.4f, 1.0f };
+	//m_pCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+	//m_pCommandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.f, 0, 0, nullptr);
+
+	m_pRoom->SetTransConstantBuffer(m_pCBVDataBegin, m_pCamera->GetProj(), m_pCamera->GetView());
+	m_pCommandList->IASetVertexBuffers(0, 1, &m_pRoom->m_tVBView);
+	m_pCommandList->IASetIndexBuffer(&m_pRoom->m_tIBView);
+	m_pCommandList->DrawIndexedInstanced(m_pRoom->m_nIdxCnt, 1, 0, 0, 0);
 
 	// Indicate that the back buffer will now be used to present.
 	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
@@ -200,24 +270,25 @@ VOID HelloMain::LoadPipeline()
 
 	// Descriptor Heaps
 	{
+		// RTV
 		// D3D12_DESCRIPTOR_HEAP_DESC { Type, NumDescriptors, Flags, NodeMask }
-		D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc{ D3D12_DESCRIPTOR_HEAP_TYPE_RTV, nFrameCount, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, 0 };
-
-		// Create a render target view (RTV) descriptor heap.
-		ThrowIfFailed(m_pDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_pRTVHeap)));
+		D3D12_DESCRIPTOR_HEAP_DESC heapDesc{ D3D12_DESCRIPTOR_HEAP_TYPE_RTV, nFrameCount, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, 0 };
+		ThrowIfFailed(m_pDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_pRTVHeap)));
 		m_nRTVDescriptorSize = m_pDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
-		// Describe and create a constant buffer view (CBV) descriptor heap.
-		// Flags indicate that this descriptor heap can be bound to the pipeline 
-		// and that descriptors contained in it can be referenced by a root table.
+		// DSV
+		heapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_NONE, 0 };
+		ThrowIfFailed(m_pDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_pDSVHeap)));
 
+		// CBV
 		// D3D12_DESCRIPTOR_HEAP_DESC { Type, NumDescriptors, Flags, NodeMask }
-		D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, 0 };
-		ThrowIfFailed(m_pDevice->CreateDescriptorHeap(&cbvHeapDesc, IID_PPV_ARGS(&m_pCBVHeap)));
+		heapDesc = { D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, 0 };
+		ThrowIfFailed(m_pDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_pCBVHeap)));
 	}
-
+	
 	// Frame Resources
 	{
+		// RTV
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_pRTVHeap->GetCPUDescriptorHandleForHeapStart());
 
 		// Create a RTV for each frame.
@@ -227,6 +298,27 @@ VOID HelloMain::LoadPipeline()
 			m_pDevice->CreateRenderTargetView(m_pRenderTargets[n].Get(), nullptr, rtvHandle);
 			rtvHandle.ptr += m_nRTVDescriptorSize;
 		}
+
+		// DSV
+		// D3D12_DEPTH_STENCIL_VIEW_DESC { Format, ViewDimension, Flags, Texture2D }
+		D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc { DXGI_FORMAT_D32_FLOAT, D3D12_DSV_DIMENSION_TEXTURE2D, D3D12_DSV_FLAG_NONE };
+
+		// D3D12_CLEAR_VALUE { Format, (Color[4], DepthStencil) }
+		D3D12_CLEAR_VALUE depthClearValue { DXGI_FORMAT_D32_FLOAT, 1.f, 0 };
+
+		// D3D12_HEAP_PROPERTIES { Type, CPUPageProperty, MemoryPoolPreference, CreationNodeMask, VisibleNodeMask }
+		D3D12_HEAP_PROPERTIES heapProperties{ D3D12_HEAP_TYPE_DEFAULT, D3D12_CPU_PAGE_PROPERTY_UNKNOWN, D3D12_MEMORY_POOL_UNKNOWN, 1, 1 };
+		
+		// D3D12_RESOURCE_DESC { Dimension, Alignment, Width, Height, DepthOrArraySize, MipLevels, 
+		//						 Format, SampleDesc.Count, SampleDesc.Quality, Layout, Flags }
+		D3D12_RESOURCE_DESC resourceDesc{ D3D12_RESOURCE_DIMENSION_TEXTURE2D, 0, m_nWidth, m_nHeight, 1, 0,
+			DXGI_FORMAT_D32_FLOAT, 1, 0, D3D12_TEXTURE_LAYOUT_UNKNOWN, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL };
+
+		ThrowIfFailed(m_pDevice->CreateCommittedResource(
+			&heapProperties, D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE, &depthClearValue, IID_PPV_ARGS(&m_pDepthStencilBuffer)));
+
+		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_pDSVHeap->GetCPUDescriptorHandleForHeapStart());
+		m_pDevice->CreateDepthStencilView(m_pDepthStencilBuffer.Get(), &depthStencilDesc, dsvHandle);
 	}
 
 	// Command Allocator
@@ -304,6 +396,16 @@ VOID HelloMain::LoadAssets()
 				blendDesc.RenderTarget[i] = defaultRenderTargetBlendDesc;
 		}
 
+		const D3D12_DEPTH_STENCILOP_DESC defaultStencilOp { D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP, D3D12_COMPARISON_FUNC_ALWAYS };
+
+		// D3D12_DEPTH_STENCIL_DESC { DepthEnable, DepthWriteMask, DepthFunc, StencilEnable, 
+		//							  StencilReadMask, StencilWriteMask, 
+		//							  FrontFace, BackFace }
+		D3D12_DEPTH_STENCIL_DESC depthStencilDesc { TRUE, D3D12_DEPTH_WRITE_MASK_ALL, D3D12_COMPARISON_FUNC_LESS, FALSE,
+													D3D12_DEFAULT_STENCIL_READ_MASK , D3D12_DEFAULT_STENCIL_WRITE_MASK,
+													defaultStencilOp, defaultStencilOp };
+
+
 		// D3D12_RASTERIZER_DESC { FillMode, CullMode, FrontCounterClockwise, DepthBias, DepthBiasClamp, 
 		//						   SlopeScaledDepthBias, DepthClipEnable, MultisampleEnable, AntialiasedLineEnable, ForcedSampleCount, ConservativeRaster }
 		D3D12_RASTERIZER_DESC rasterizerDesc { D3D12_FILL_MODE_SOLID, D3D12_CULL_MODE_BACK, FALSE, D3D12_DEFAULT_DEPTH_BIAS, D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
@@ -320,12 +422,12 @@ VOID HelloMain::LoadAssets()
 		psoDesc.BlendState = blendDesc;
 		psoDesc.SampleMask = UINT_MAX;
 		psoDesc.RasterizerState = rasterizerDesc;
-		psoDesc.DepthStencilState.DepthEnable = FALSE;
-		psoDesc.DepthStencilState.StencilEnable = FALSE;
+		psoDesc.DepthStencilState = depthStencilDesc;
 		psoDesc.InputLayout = D3D12_INPUT_LAYOUT_DESC{ inputElementDescs, _countof(inputElementDescs) };
 		psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 		psoDesc.NumRenderTargets = 1;
-		psoDesc.RTVFormats[0] = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+		psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 		psoDesc.SampleDesc.Count = 1;
 
 		ThrowIfFailed(m_pDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pPipelineState)));

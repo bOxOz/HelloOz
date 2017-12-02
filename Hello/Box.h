@@ -6,7 +6,9 @@ public:
 	Box();
 	~Box();
 
-	void CreateShape();
+	void SetScale(FLOAT fScale);
+
+	void CreateShape(const XMFLOAT4& vColor, BOOL bBackCull = TRUE);
 	void SetTransConstantBuffer(UINT8* pCBVDataBegin, const XMFLOAT4X4& matProj, const XMFLOAT4X4& matView);
 
 	ComPtr<ID3D12Resource>		m_pVB;
@@ -16,6 +18,7 @@ public:
 
 	UINT m_nVBSize;
 	UINT m_nIBSize;
+	UINT m_nIdxCnt;
 
 	XMFLOAT4X4 m_matWorld;
 };

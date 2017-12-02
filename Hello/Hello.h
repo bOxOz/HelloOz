@@ -21,7 +21,8 @@ public:
 	ComPtr<ID3D12Device> GetDevice() { return m_pDevice; }
 
 private:
-	VOID PopulateCommandList();
+	VOID PopulateCommandList1();
+	VOID PopulateCommandList2();
 	VOID WaitForPreviousFrame();
 
 	// Init
@@ -34,6 +35,7 @@ private:
 	FLOAT	m_fAspectRatio;
 
 	Box*	m_pBox;
+	Box*	m_pRoom;
 	Camera*	m_pCamera;
 
 	static const UINT nFrameCount = 2;
@@ -42,6 +44,7 @@ private:
 	ComPtr<ID3D12RootSignature>			m_pRootSignature;
 	ComPtr<IDXGISwapChain3>				m_pSwapChain;
 	ComPtr<ID3D12DescriptorHeap>		m_pRTVHeap;
+	ComPtr<ID3D12DescriptorHeap>		m_pDSVHeap;
 	ComPtr<ID3D12DescriptorHeap>		m_pCBVHeap;
 	ComPtr<ID3D12PipelineState>			m_pPipelineState;
 	ComPtr<ID3D12CommandAllocator>		m_pCommandAllocator;
@@ -50,6 +53,7 @@ private:
 	ComPtr<ID3D12Fence>					m_pFence;
 
 	ComPtr<ID3D12Resource>				m_pRenderTargets[nFrameCount];
+	ComPtr<ID3D12Resource>				m_pDepthStencilBuffer;
 	ComPtr<ID3D12Resource>				m_pTransConstantBuffer;
 	UINT8*								m_pCBVDataBegin;
 
