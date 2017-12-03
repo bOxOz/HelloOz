@@ -18,6 +18,7 @@
 #include <dxgi1_4.h>
 #include <D3Dcompiler.h>
 #include <DirectXMath.h>
+#include <d3dx9mesh.h>
 
 #include <string>
 #include <wrl.h>
@@ -32,10 +33,14 @@ extern HelloMain* g_HelloMain;
 
 #define GetMainDevice() g_HelloMain->GetDevice()
 
+#define WINSIZEX 800
+#define WINSIZEY 600
+
 struct Vertex
 {
 	XMFLOAT3 vPosition;
 	XMFLOAT4 vColor;
+	XMFLOAT3 vNormal;
 };
 
 struct Index

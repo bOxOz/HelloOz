@@ -2,10 +2,12 @@
 
 class Camera;
 class Box;
+class Light;
+class Ray;
 class HelloMain
 {
 public:
-	HelloMain(UINT nWidth, UINT nHeight);
+	HelloMain();
 	~HelloMain();
 
 	VOID OnInit();
@@ -16,9 +18,17 @@ public:
 	VOID OnKeyDown(UINT8) {};
 	VOID OnKeyUp(UINT8) {};
 
-	UINT GetWidth()	{ return m_nWidth; }
-	UINT GetHeight() { return m_nHeight; }
 	ComPtr<ID3D12Device> GetDevice() { return m_pDevice; }
+	Camera* GetCamera() { return m_pCamera; }
+	void SetPixelColor(const XMFLOAT2& vPixelPos, const XMFLOAT3& vColor) 
+	{ 
+		UINT idx = UINT(vPixelPos.x) + (UINT(vPixelPos.y) * WINSIZEX);
+		*(m_pPixelColor[idx]) = vColor; 
+	}
+
+	Box*			m_pBox;
+	Box*			m_pRoom;
+	Light*			m_pLight;
 
 private:
 	VOID PopulateCommandList1();
@@ -30,13 +40,9 @@ private:
 	VOID LoadAssets();
 	VOID GetHardwareAdapter(IDXGIFactory2* pFactory, IDXGIAdapter1** ppAdapter);
 
-	UINT	m_nWidth;
-	UINT	m_nHeight;
-	FLOAT	m_fAspectRatio;
-
-	Box*	m_pBox;
-	Box*	m_pRoom;
-	Camera*	m_pCamera;
+	Camera*			m_pCamera;
+	Ray*			m_pRayList[WINSIZEX * WINSIZEY];
+	XMFLOAT3*		m_pPixelColor[WINSIZEX * WINSIZEY];
 
 	static const UINT nFrameCount = 2;
 
@@ -53,6 +59,7 @@ private:
 	ComPtr<ID3D12Fence>					m_pFence;
 
 	ComPtr<ID3D12Resource>				m_pRenderTargets[nFrameCount];
+	ComPtr<ID3D12Resource>				m_pResTexture;
 	ComPtr<ID3D12Resource>				m_pDepthStencilBuffer;
 	ComPtr<ID3D12Resource>				m_pTransConstantBuffer;
 	UINT8*								m_pCBVDataBegin;

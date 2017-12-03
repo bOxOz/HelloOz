@@ -16,6 +16,13 @@ Box::~Box()
 void Box::SetScale(FLOAT fScale)
 {
 	XMStoreFloat4x4(&m_matWorld, XMMatrixScaling(fScale, fScale, fScale));
+
+	for (UINT i = 0; i < 8; ++i)
+	{
+		m_arrVertices[i].vPosition.x *= fScale;
+		m_arrVertices[i].vPosition.y *= fScale;
+		m_arrVertices[i].vPosition.z *= fScale;
+	}
 }
 
 void Box::SetTransConstantBuffer(UINT8* pCBVDataBegin, const XMFLOAT4X4& matProj, const XMFLOAT4X4& matView)
@@ -34,15 +41,27 @@ void Box::CreateShape(const XMFLOAT4& vColor, BOOL bBackCull)
 	{
 		Vertex arrVertices[]
 		{
-			{ { -0.5f, 0.5f, -0.5f },	vColor },
-			{ { 0.5f, 0.5f, -0.5f },	vColor },
-			{ { 0.5f, -0.5f, -0.5f },	vColor },
-			{ { -0.5f, -0.5f, -0.5f },	vColor },
-			{ { -0.5f, 0.5f, 0.5f },	vColor },
-			{ { 0.5f, 0.5f, 0.5f },		vColor },
-			{ { 0.5f, -0.5f, 0.5f },	vColor },
-			{ { -0.5f, -0.5f, 0.5f },	vColor }
+			{ { -0.5f, 0.5f, -0.5f },	vColor, { 0.f, 0.f, 0.f } },
+			{ { 0.5f, 0.5f, -0.5f },	vColor, { 0.f, 0.f, 0.f } },
+			{ { 0.5f, -0.5f, -0.5f },	vColor, { 0.f, 0.f, 0.f } },
+			{ { -0.5f, -0.5f, -0.5f },	vColor, { 0.f, 0.f, 0.f } },
+			{ { -0.5f, 0.5f, 0.5f },	vColor, { 0.f, 0.f, 0.f } },
+			{ { 0.5f, 0.5f, 0.5f },		vColor, { 0.f, 0.f, 0.f } },
+			{ { 0.5f, -0.5f, 0.5f },	vColor, { 0.f, 0.f, 0.f } },
+			{ { -0.5f, -0.5f, 0.5f },	vColor, { 0.f, 0.f, 0.f } }
 		};
+
+		// Normal °è»ê
+		if (bBackCull)
+		{
+			for (INT idx = 0; idx < sizeof(arrVertices) / sizeof(Vertex); ++idx)
+				XMStoreFloat3(&arrVertices[idx].vNormal, XMVector3Normalize(XMLoadFloat3(&arrVertices[idx].vPosition)));
+		}
+		else
+		{
+			for (INT idx = 0; idx < sizeof(arrVertices) / sizeof(Vertex); ++idx)
+				XMStoreFloat3(&arrVertices[idx].vNormal, XMVector3Normalize(XMLoadFloat3(&arrVertices[idx].vPosition) * -1.f));
+		}
 
 		m_nVBSize = sizeof(arrVertices);
 
@@ -65,6 +84,8 @@ void Box::CreateShape(const XMFLOAT4& vColor, BOOL bBackCull)
 
 		// D3D12_VERTEX_BUFFER_VIEW { BufferLocation, SizeInBytes, StrideInBytes } 
 		m_tVBView = { m_pVB->GetGPUVirtualAddress(), m_nVBSize, sizeof(Vertex) };
+
+		memcpy(m_arrVertices, arrVertices, m_nVBSize);
 	}
 
 	{
@@ -124,5 +145,7 @@ void Box::CreateShape(const XMFLOAT4& vColor, BOOL bBackCull)
 
 		// D3D12_VERTEX_BUFFER_VIEW { BufferLocation, SizeInBytes, StrideInBytes } 
 		m_tIBView = { m_pIB->GetGPUVirtualAddress(), m_nIBSize, DXGI_FORMAT_R32_UINT };
+
+		memcpy(m_arrIndeces, arrIndex, m_nIBSize);
 	}
 }

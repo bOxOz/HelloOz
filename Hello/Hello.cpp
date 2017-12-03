@@ -3,19 +3,21 @@
 
 #include "Camera.h"
 #include "Box.h"
+#include "Light.h"
+#include "Ray.h"
 //#include "Sphere.h"
 
-HelloMain::HelloMain(UINT nWidth, UINT nHeight)
-	: m_nWidth(nWidth), m_nHeight(nHeight)
-	, m_pDevice(nullptr), m_pRootSignature(nullptr), m_pSwapChain(nullptr), m_pPipelineState(nullptr)
+HelloMain::HelloMain()
+	: m_pDevice(nullptr), m_pRootSignature(nullptr), m_pSwapChain(nullptr), m_pPipelineState(nullptr)
 	, m_pRTVHeap(nullptr), m_pDSVHeap(nullptr), m_pCBVHeap(nullptr)
 	, m_pCommandAllocator(nullptr), m_pCommandQueue(nullptr), m_pCommandList(nullptr), m_pFence(nullptr)
 	, m_nFrameIndex(-1), m_nRTVDescriptorSize(0)
 	, m_pFenceEvent(nullptr), m_nFenceValue(0)
 	, m_pDepthStencilBuffer(nullptr), m_pTransConstantBuffer(nullptr), m_pCBVDataBegin(nullptr)
-	, m_pCamera(nullptr), m_pBox(nullptr), m_pRoom(nullptr)
+	, m_pCamera(nullptr), m_pBox(nullptr), m_pRoom(nullptr), m_pLight(nullptr)
 {
-	m_fAspectRatio = static_cast<FLOAT>(m_nWidth) / static_cast<FLOAT>(m_nHeight);
+	ZeroMemory(m_pRayList, sizeof(Ray*) * WINSIZEX * WINSIZEY);
+	ZeroMemory(m_pPixelColor, sizeof(XMFLOAT3*) * WINSIZEX * WINSIZEY);
 }
 
 HelloMain::~HelloMain()
@@ -25,17 +27,35 @@ HelloMain::~HelloMain()
 
 VOID HelloMain::OnInit()
 {
+	FLOAT fRoomSize = 10.f;
+
 	LoadPipeline();
 	LoadAssets();
 
-	m_pCamera = new Camera(0.1f, 1000.f, XMFLOAT3(10.f, 10.f, -10.f), XMFLOAT3(0.f, 0.f, 0.0f));
+	// Create Object
+	m_pCamera = new Camera(0.1f, 1000.f, XMFLOAT3(0.f, 0.f, -3.f), XMFLOAT3(0.f, 0.f, 0.0f));
+	m_pLight = new Light(XMFLOAT3(fRoomSize - 0.5f, fRoomSize - 0.5f, fRoomSize - 0.5f));
+
+	for (INT y = 0; y < WINSIZEY; ++y)
+	{
+		for (INT x = 0; x < WINSIZEX; ++x)
+		{
+			m_pRayList[(y * WINSIZEX) + x] = new Ray(XMFLOAT2(FLOAT(x), FLOAT(y)));
+			m_pPixelColor[(y * WINSIZEX) + x] = new XMFLOAT3(0.f, 0.f, 0.f);
+		}
+	}
+
 	m_pBox = new Box();
 	m_pRoom = new Box();
 
-	m_pBox->CreateShape(XMFLOAT4(0.9f, 0.8f, 0.f, 1.f));
+	m_pBox->CreateShape(XMFLOAT4(0.85f, 0.7f, 0.1f, 1.f));
 
 	m_pRoom->CreateShape(XMFLOAT4(0.95f, 0.95f, 0.9f, 1.f), FALSE);
-	m_pRoom->SetScale(12.f);
+	m_pRoom->SetScale(fRoomSize);
+
+	// Check Ray
+	for (INT i = 0; i < WINSIZEX * WINSIZEY; ++i)
+		m_pRayList[i]->IntersectObject();
 
 	OutputDebugString(L"Init Device\n");
 }
@@ -66,8 +86,12 @@ VOID HelloMain::OnDestroy()
 	CloseHandle(m_pFenceEvent);
 
 	delete m_pCamera;
+	delete m_pLight;
 	delete m_pBox;
 	delete m_pRoom;
+
+	delete[] &m_pRayList;
+	delete[] &m_pPixelColor;
 
 	OutputDebugString(L"Destroy Device\n");
 }
@@ -85,10 +109,10 @@ VOID HelloMain::PopulateCommandList1()
 
 	m_pCommandList->SetGraphicsRootDescriptorTable(0, m_pCBVHeap->GetGPUDescriptorHandleForHeapStart());
 
-	D3D12_VIEWPORT vp { 0.f, 0.f, static_cast<FLOAT>(m_nWidth), static_cast<FLOAT>(m_nHeight), 0.f, 1.f };
+	D3D12_VIEWPORT vp { 0.f, 0.f, static_cast<FLOAT>(WINSIZEX), static_cast<FLOAT>(WINSIZEY), 0.f, 1.f };
 	m_pCommandList->RSSetViewports(1, &vp);
 
-	D3D12_RECT rc { 0, 0, static_cast<LONG>(m_nWidth), static_cast<LONG>(m_nHeight) };
+	D3D12_RECT rc { 0, 0, static_cast<LONG>(WINSIZEX), static_cast<LONG>(WINSIZEY) };
 	m_pCommandList->RSSetScissorRects(1, &rc);
 
 	// Indicate that the back buffer will be used as a render target.
@@ -140,10 +164,10 @@ VOID HelloMain::PopulateCommandList2()
 
 	m_pCommandList->SetGraphicsRootDescriptorTable(0, m_pCBVHeap->GetGPUDescriptorHandleForHeapStart());
 
-	D3D12_VIEWPORT vp{ 0.f, 0.f, static_cast<FLOAT>(m_nWidth), static_cast<FLOAT>(m_nHeight), 0.f, 1.f };
+	D3D12_VIEWPORT vp{ 0.f, 0.f, static_cast<FLOAT>(WINSIZEX), static_cast<FLOAT>(WINSIZEY), 0.f, 1.f };
 	m_pCommandList->RSSetViewports(1, &vp);
 
-	D3D12_RECT rc{ 0, 0, static_cast<LONG>(m_nWidth), static_cast<LONG>(m_nHeight) };
+	D3D12_RECT rc{ 0, 0, static_cast<LONG>(WINSIZEX), static_cast<LONG>(WINSIZEY) };
 	m_pCommandList->RSSetScissorRects(1, &rc);
 
 	// Indicate that the back buffer will be used as a render target.
@@ -249,7 +273,7 @@ VOID HelloMain::LoadPipeline()
 	{
 		// DXGI_SWAP_CHAIN_DESC1 { Width, Height, Format, Stereo, SampleDesc, 
 		//						   BufferUsage, BufferCount, Scaling, SwapEffect, AlphaMode, Flags }
-		DXGI_SWAP_CHAIN_DESC1 swapChainDesc{ m_nWidth, m_nHeight, DXGI_FORMAT_R8G8B8A8_UNORM, FALSE, { 1, 0 }, 
+		DXGI_SWAP_CHAIN_DESC1 swapChainDesc{ WINSIZEX, WINSIZEY, DXGI_FORMAT_R8G8B8A8_UNORM, FALSE, { 1, 0 },
 			DXGI_USAGE_RENDER_TARGET_OUTPUT, nFrameCount, DXGI_SCALING_STRETCH, DXGI_SWAP_EFFECT_FLIP_DISCARD, DXGI_ALPHA_MODE_UNSPECIFIED, 0 };
 
 		ThrowIfFailed(pFactory->CreateSwapChainForHwnd(
@@ -299,6 +323,15 @@ VOID HelloMain::LoadPipeline()
 			rtvHandle.ptr += m_nRTVDescriptorSize;
 		}
 
+		// ResTex
+		//D3D12_HEAP_PROPERTIES heapProperties{ D3D12_HEAP_TYPE_UPLOAD, D3D12_CPU_PAGE_PROPERTY_UNKNOWN, D3D12_MEMORY_POOL_UNKNOWN, 1, 1 };
+		//
+		//D3D12_RESOURCE_DESC resourceDesc{ D3D12_RESOURCE_DIMENSION_TEXTURE2D, 0, WINSIZEX, WINSIZEY, 1, 0,
+		//	DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D12_TEXTURE_LAYOUT_UNKNOWN, D3D12_RESOURCE_FLAG_NONE };
+		//
+		//ThrowIfFailed(m_pDevice->CreateCommittedResource(
+		//	&heapProperties, D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE, nullptr, IID_PPV_ARGS(&m_pResTexture)));
+
 		// DSV
 		// D3D12_DEPTH_STENCIL_VIEW_DESC { Format, ViewDimension, Flags, Texture2D }
 		D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc { DXGI_FORMAT_D32_FLOAT, D3D12_DSV_DIMENSION_TEXTURE2D, D3D12_DSV_FLAG_NONE };
@@ -307,11 +340,11 @@ VOID HelloMain::LoadPipeline()
 		D3D12_CLEAR_VALUE depthClearValue { DXGI_FORMAT_D32_FLOAT, 1.f, 0 };
 
 		// D3D12_HEAP_PROPERTIES { Type, CPUPageProperty, MemoryPoolPreference, CreationNodeMask, VisibleNodeMask }
-		D3D12_HEAP_PROPERTIES heapProperties{ D3D12_HEAP_TYPE_DEFAULT, D3D12_CPU_PAGE_PROPERTY_UNKNOWN, D3D12_MEMORY_POOL_UNKNOWN, 1, 1 };
+		D3D12_HEAP_PROPERTIES heapProperties { D3D12_HEAP_TYPE_DEFAULT, D3D12_CPU_PAGE_PROPERTY_UNKNOWN, D3D12_MEMORY_POOL_UNKNOWN, 1, 1 };
 		
 		// D3D12_RESOURCE_DESC { Dimension, Alignment, Width, Height, DepthOrArraySize, MipLevels, 
 		//						 Format, SampleDesc.Count, SampleDesc.Quality, Layout, Flags }
-		D3D12_RESOURCE_DESC resourceDesc{ D3D12_RESOURCE_DIMENSION_TEXTURE2D, 0, m_nWidth, m_nHeight, 1, 0,
+		D3D12_RESOURCE_DESC resourceDesc { D3D12_RESOURCE_DIMENSION_TEXTURE2D, 0, WINSIZEX, WINSIZEY, 1, 0,
 			DXGI_FORMAT_D32_FLOAT, 1, 0, D3D12_TEXTURE_LAYOUT_UNKNOWN, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL };
 
 		ThrowIfFailed(m_pDevice->CreateCommittedResource(
@@ -375,7 +408,8 @@ VOID HelloMain::LoadAssets()
 		D3D12_INPUT_ELEMENT_DESC inputElementDescs[]
 		{
 			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+			{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+			{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 		};
 
 		// D3D12_BLEND_DESC { AlphaToCoverageEnable, IndependentBlendEnable, RenderTarget }

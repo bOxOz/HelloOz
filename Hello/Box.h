@@ -11,6 +11,9 @@ public:
 	void CreateShape(const XMFLOAT4& vColor, BOOL bBackCull = TRUE);
 	void SetTransConstantBuffer(UINT8* pCBVDataBegin, const XMFLOAT4X4& matProj, const XMFLOAT4X4& matView);
 
+	Vertex						m_arrVertices[8];
+	UINT						m_arrIndeces[36];
+
 	ComPtr<ID3D12Resource>		m_pVB;
 	D3D12_VERTEX_BUFFER_VIEW	m_tVBView;
 	ComPtr<ID3D12Resource>		m_pIB;

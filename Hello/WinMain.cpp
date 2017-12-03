@@ -16,7 +16,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
-	g_HelloMain = new HelloMain(1280, 720);
+	g_HelloMain = new HelloMain();
 
     // Perform application initialization:
 	WNDCLASSEX wcex { 0 };
@@ -28,7 +28,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	wcex.lpszClassName = L"Hello";
 	RegisterClassExW(&wcex);
 
-	RECT rcWindow = { 0, 0, static_cast<LONG>(g_HelloMain->GetWidth()), static_cast<LONG>(g_HelloMain->GetHeight()) };
+	RECT rcWindow = { 0, 0, static_cast<LONG>(WINSIZEX), static_cast<LONG>(WINSIZEY) };
 	AdjustWindowRect(&rcWindow, WS_OVERLAPPEDWINDOW, FALSE);
 
 	// Create the window and store a handle to it.
