@@ -24,9 +24,6 @@
     <ClInclude Include="stdafx.h">
       <Filter>Etc</Filter>
     </ClInclude>
-    <ClInclude Include="Sphere.h">
-      <Filter>Object</Filter>
-    </ClInclude>
     <ClInclude Include="Box.h">
       <Filter>Object</Filter>
     </ClInclude>
@@ -39,6 +36,12 @@
     <ClInclude Include="Light.h">
       <Filter>Object</Filter>
     </ClInclude>
+    <ClInclude Include="Rect.h">
+      <Filter>Object</Filter>
+    </ClInclude>
+    <ClInclude Include="d3dx12.h">
+      <Filter>Etc</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Hello.cpp">
@@ -49,9 +52,6 @@
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <Filter>Etc</Filter>
-    </ClCompile>
-    <ClCompile Include="Sphere.cpp">
-      <Filter>Object</Filter>
     </ClCompile>
     <ClCompile Include="Box.cpp">
       <Filter>Object</Filter>
@@ -65,10 +65,19 @@
     <ClCompile Include="Light.cpp">
       <Filter>Object</Filter>
     </ClCompile>
+    <ClCompile Include="Rect.cpp">
+      <Filter>Object</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\bin\Shader\shaders.hlsl">
       <Filter>Shader</Filter>
     </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Hello.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
 </Project>

@@ -20,6 +20,7 @@
 #include <DirectXMath.h>
 #include <d3dx9mesh.h>
 
+#include <vector>
 #include <string>
 #include <wrl.h>
 
@@ -41,6 +42,12 @@ struct Vertex
 	XMFLOAT3 vPosition;
 	XMFLOAT4 vColor;
 	XMFLOAT3 vNormal;
+};
+
+struct VtxTex
+{
+	XMFLOAT3 vPosition;
+	XMFLOAT2 vUV;
 };
 
 struct Index

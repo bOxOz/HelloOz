@@ -6,11 +6,9 @@ public:
 	Ray(const XMFLOAT2& vPixelPos);
 	~Ray();
 
+	void SetDir();
 	void IntersectObject();
 
-private:
-	void SetNormal();
-
 	XMFLOAT2 m_vPixelPos;
-	XMFLOAT3 m_vNormal;
+	XMFLOAT3 m_vDir;
 };

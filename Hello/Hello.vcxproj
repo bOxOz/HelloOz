@@ -161,10 +161,11 @@
   <ItemGroup>
     <ClInclude Include="Box.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="d3dx12.h" />
     <ClInclude Include="Hello.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="Ray.h" />
-    <ClInclude Include="Sphere.h" />
+    <ClInclude Include="Rect.h" />
     <ClInclude Include="WinMain.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
@@ -174,7 +175,7 @@
     <ClCompile Include="Hello.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Ray.cpp" />
-    <ClCompile Include="Sphere.cpp" />
+    <ClCompile Include="Rect.cpp" />
     <ClCompile Include="WinMain.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -195,6 +196,12 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
       <FileType>Document</FileType>
     </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Hello.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
