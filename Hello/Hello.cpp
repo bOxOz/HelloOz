@@ -7,14 +7,14 @@
 #include "Box.h"
 #include "Light.h"
 #include "Ray.h"
-//#include "Sphere.h"
+#include "Sphere.h"
 
 HelloMain::HelloMain()
 	: m_pDevice(nullptr), m_pRootSignature(nullptr), m_pSwapChain(nullptr), m_pPipelineState(nullptr)
 	, m_pCommandAllocator(nullptr), m_pCommandQueue(nullptr), m_pCommandList(nullptr), m_pFence(nullptr)
 	, m_pRTVHeap(nullptr), m_pSRVHeap(nullptr), m_pTexture(nullptr), m_nFrameIndex(-1), m_nRTVDescriptorSize(0)
 	, m_pFenceEvent(nullptr), m_nFenceValue(0)
-	, m_pCamera(nullptr), m_pBox(nullptr), m_pRoom(nullptr), m_pLight(nullptr), m_pRenderRect(nullptr)
+	, m_pCamera(nullptr), m_pLight(nullptr), m_pRenderRect(nullptr)
 {
 	ZeroMemory(m_pRayList, sizeof(Ray*) * WINSIZEX * WINSIZEY);
 }
@@ -26,9 +26,6 @@ HelloMain::~HelloMain()
 
 VOID HelloMain::OnInit()
 {
-	FLOAT fBoxSize = 1.f;
-	FLOAT fRoomSize = 10.f;
-
 	XMFLOAT3 vCameraPos{ 10.f, 10.f, -10.f };
 	XMFLOAT3 vLightPos{ 4.f, 6.f, -5.f };
 
@@ -42,16 +39,13 @@ VOID HelloMain::OnInit()
 	{
 		for (INT x = 0; x < WINSIZEX; ++x)
 		{
-			m_pRayList[(y * WINSIZEX) + x] = new Ray(XMFLOAT2(FLOAT(x), FLOAT(y)));
+			m_pRayList[(y * WINSIZEX) + x] = new Ray(XMFLOAT2(FLOAT(x), FLOAT(y)), vCameraPos);
 			m_PixelColorList.push_back(XMFLOAT4(0.f, 0.f, 0.f, 1.f));
 		}
 	}
 
-	m_pBox = new Box();
-	m_pRoom = new Box();
-
-	m_pBox->CreateShape(fBoxSize, XMFLOAT4(1.f, 0.9f, 0.1f, 1.f));
-	m_pRoom->CreateShape(fRoomSize, XMFLOAT4(0.95f, 0.95f, 0.9f, 1.f), FALSE);
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(0.f, 0.f, 0.f), 1.f, XMFLOAT4(0.9f, 0.9f, 0.3f, 1.f)));
+	m_ObjectList.push_back(new Box(XMFLOAT3(0.f, 0.f, 0.f), 10.f, XMFLOAT4(0.95f, 0.95f, 0.9f, 1.f), FALSE));
 
 	// Check Intersect
 	for (INT i = 0; i < WINSIZEX * WINSIZEY; ++i)
@@ -61,6 +55,7 @@ VOID HelloMain::OnInit()
 	LoadPipeline();
 	LoadAssets();
 
+	// Render Rect
 	m_pRenderRect = new Rect();
 	m_pRenderRect->CreateShape();
 
@@ -91,12 +86,14 @@ VOID HelloMain::OnDestroy()
 	delete m_pRenderRect;
 	delete m_pCamera;
 	delete m_pLight;
-	delete m_pBox;
-	delete m_pRoom;
 
 	for (INT i = 0; i < WINSIZEX * WINSIZEY; ++i)
 		delete m_pRayList[i];
 	
+	for (INT i = 0; i < m_ObjectList.size(); ++i)
+		delete m_ObjectList[i];
+
+	m_ObjectList.empty();
 	m_PixelColorList.empty();
 
 	OutputDebugString(L"Destroy Device\n");

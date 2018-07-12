@@ -164,8 +164,10 @@
     <ClInclude Include="d3dx12.h" />
     <ClInclude Include="Hello.h" />
     <ClInclude Include="Light.h" />
+    <ClInclude Include="Primitive.h" />
     <ClInclude Include="Ray.h" />
     <ClInclude Include="Rect.h" />
+    <ClInclude Include="Sphere.h" />
     <ClInclude Include="WinMain.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
@@ -174,8 +176,10 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Hello.cpp" />
     <ClCompile Include="Light.cpp" />
+    <ClCompile Include="Primitive.cpp" />
     <ClCompile Include="Ray.cpp" />
     <ClCompile Include="Rect.cpp" />
+    <ClCompile Include="Sphere.cpp" />
     <ClCompile Include="WinMain.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

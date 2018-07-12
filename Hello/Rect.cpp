@@ -5,13 +5,14 @@
 Rect::Rect()
 	: m_pVB(nullptr), m_nVBSize(0)
 {
+	CreateShape();
 }
 
 Rect::~Rect()
 {
 }
 
-void Rect::CreateShape()
+VOID Rect::CreateShape()
 {
 	// Create the vertex buffer.
 	{

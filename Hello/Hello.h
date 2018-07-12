@@ -1,8 +1,8 @@
 #pragma once
 
+class Primitive;
 class Rect;
 class Camera;
-class Box;
 class Light;
 class Ray;
 class HelloMain
@@ -27,8 +27,8 @@ public:
 		m_PixelColorList[idx] = vColor;
 	}
 
-	Box*			m_pBox;
-	Box*			m_pRoom;
+	std::vector<Primitive*> m_ObjectList;
+
 	Light*			m_pLight;
 	Rect*			m_pRenderRect;
 
