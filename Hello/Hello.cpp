@@ -26,8 +26,8 @@ HelloMain::~HelloMain()
 
 VOID HelloMain::OnInit()
 {
-	XMFLOAT3 vCameraPos{ 10.f, 10.f, -10.f };
-	XMFLOAT3 vLightPos{ 4.f, 6.f, -5.f };
+	XMFLOAT3 vCameraPos(0.f, 10.f, -13.f);
+	XMFLOAT3 vLightPos(0.f, 4.5f, 0.f);
 
 	// Create Object
 	m_pCamera = new Camera(0.1f, 1000.f, vCameraPos, XMFLOAT3(0.f, 0.f, 0.0f));
@@ -44,8 +44,11 @@ VOID HelloMain::OnInit()
 		}
 	}
 
-	m_ObjectList.push_back(new Sphere(XMFLOAT3(0.f, 0.f, 0.f), 1.f, XMFLOAT4(0.9f, 0.9f, 0.3f, 1.f)));
-	m_ObjectList.push_back(new Box(XMFLOAT3(0.f, 0.f, 0.f), 10.f, XMFLOAT4(0.95f, 0.95f, 0.9f, 1.f), FALSE));
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(-2.2f, 0.f, 0.f), 1.f, XMFLOAT4(0.9f, 0.3f, 0.3f, 1.f)));
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(0.f, 0.f, 0.f), 1.f, XMFLOAT4(0.3f, 0.9f, 0.3f, 1.f)));
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(2.2f, 0.f, 0.f), 1.f, XMFLOAT4(0.3f, 0.3f, 0.9f, 1.f)));
+
+	m_ObjectList.push_back(new Box(XMFLOAT3(0.f, 0.f, 0.f), 20.f, XMFLOAT4(0.95f, 0.95f, 0.9f, 1.f), FALSE));
 
 	// Check Intersect
 	for (INT i = 0; i < WINSIZEX * WINSIZEY; ++i)

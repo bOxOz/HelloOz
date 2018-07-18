@@ -4,6 +4,7 @@ class Ray
 {
 public:
 	Ray(const XMFLOAT2& vPixelPos, const XMFLOAT3& vOrigin);
+	Ray(const XMFLOAT3& vStart, const XMFLOAT3& vEnd);
 	~Ray();
 
 	VOID SetDirToWorld();

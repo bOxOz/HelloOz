@@ -12,6 +12,7 @@ public:
 	const XMFLOAT4& GetColor() { return m_vColor; }
 
 	virtual BOOL Intersect(const Ray& ray, FLOAT& fIntersectDist, XMFLOAT3& vIntersectPos, XMFLOAT3& vIntersectNorm) = 0;
+	virtual BOOL IntersectP(const Ray& ray, FLOAT& fIntersectDist) = 0;
 
 protected:
 	XMFLOAT3 m_vPosition;

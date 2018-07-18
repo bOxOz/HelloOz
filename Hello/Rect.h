@@ -12,6 +12,7 @@ public:
 	VOID CreateShape();
 
 	BOOL Intersect(const Ray& ray, FLOAT& fIntersectDist, XMFLOAT3& vIntersectPos, XMFLOAT3& vIntersectNorm) { return TRUE; }
+	BOOL IntersectP(const Ray& ray, FLOAT& fIntersectDist) { return TRUE; }
 
 //private:
 	ComPtr<ID3D12Resource>		m_pVB;

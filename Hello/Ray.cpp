@@ -12,6 +12,14 @@ Ray::Ray(const XMFLOAT2& vPixelPos, const XMFLOAT3& vOrigin)
 	SetDirToWorld();
 }
 
+Ray::Ray(const XMFLOAT3& vStart, const XMFLOAT3& vEnd)
+	: m_vPixelPos(XMFLOAT2(0.f, 0.f)), m_vOrigin(vStart)
+{
+	XMVECTOR vRayNormal = XMLoadFloat3(&vEnd) - XMLoadFloat3(&vStart);
+	vRayNormal = XMVector3Normalize(vRayNormal);
+	XMStoreFloat3(&m_vDirection, vRayNormal);
+}
+
 Ray::~Ray()
 {
 
@@ -42,14 +50,15 @@ VOID Ray::IntersectObject()
 	XMFLOAT3 vIntersectNorm { 0.f, 0.f, 0.f };
 
 	FLOAT fDist = 1000.f, fMinDist = 1000.f;
+	
+	Primitive* colObj = NULL;
 
 	for (auto obj : g_HelloMain->m_ObjectList)
 	{
-		obj->Intersect(*this, fDist, vIntersectPos, vIntersectNorm);
-
-		if (fDist < fMinDist)
+		if (obj->Intersect(*this, fDist, vIntersectPos, vIntersectNorm))
 		{
 			fMinDist = fDist;
+			colObj = obj;
 
 			vResultPos = vIntersectPos;
 			vResultNormal = vIntersectNorm;
@@ -68,9 +77,25 @@ VOID Ray::IntersectObject()
 		FLOAT fDiffuse; 		
 		XMStoreFloat(&fDiffuse, vDiffuse);
 		fDiffuse = max(fDiffuse, 0.f) * 0.5f + 0.5f;
+
+		// 충돌했다면 그림자를 만들어준다.
+		for (auto obj : g_HelloMain->m_ObjectList)
+		{
+			if (colObj == obj)
+				continue;
+
+			Ray tmpRay(vIntersectPos, g_HelloMain->m_pLight->GetPosition());
+			XMStoreFloat(&fDist,XMVector3Length(XMLoadFloat3(&vIntersectPos) - XMLoadFloat3(&g_HelloMain->m_pLight->GetPosition())));		
+
+			if (obj->IntersectP(tmpRay, fDist))
+			{
+				fDiffuse *= 0.7f;
+				break;
+			}
+		}
 		
 		// Color와 계산하여 Color 데이터에 넣어준다.
 		vResultColor = XMFLOAT4(vResultColor.x * fDiffuse, vResultColor.y * fDiffuse, vResultColor.z * fDiffuse, 1.f);
-		g_HelloMain->SetPixelColor(XMFLOAT2(m_vPixelPos.x, m_vPixelPos.y), vResultColor);
+		g_HelloMain->SetPixelColor(m_vPixelPos, vResultColor);
 	}
 }
