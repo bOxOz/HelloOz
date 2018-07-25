@@ -3,7 +3,6 @@
 class Primitive;
 class Rect;
 class Camera;
-class Light;
 class Ray;
 class HelloMain
 {
@@ -28,9 +27,7 @@ public:
 	}
 
 	std::vector<Primitive*> m_ObjectList;
-
-	Light*			m_pLight;
-	Rect*			m_pRenderRect;
+	Rect* m_pRenderRect;
 
 private:
 	VOID PopulateCommandList();

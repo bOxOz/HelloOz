@@ -33,9 +33,6 @@
     <ClInclude Include="Ray.h">
       <Filter>Object</Filter>
     </ClInclude>
-    <ClInclude Include="Light.h">
-      <Filter>Object</Filter>
-    </ClInclude>
     <ClInclude Include="Rect.h">
       <Filter>Object</Filter>
     </ClInclude>
@@ -66,9 +63,6 @@
       <Filter>Object</Filter>
     </ClCompile>
     <ClCompile Include="Ray.cpp">
-      <Filter>Object</Filter>
-    </ClCompile>
-    <ClCompile Include="Light.cpp">
       <Filter>Object</Filter>
     </ClCompile>
     <ClCompile Include="Rect.cpp">

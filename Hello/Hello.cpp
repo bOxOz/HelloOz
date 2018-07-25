@@ -2,11 +2,10 @@
 #include "Hello.h"
 #include "d3dx12.h"
 
-#include "Rect.h"
 #include "Camera.h"
-#include "Box.h"
-#include "Light.h"
 #include "Ray.h"
+#include "Rect.h"
+#include "Box.h"
 #include "Sphere.h"
 
 HelloMain::HelloMain()
@@ -14,7 +13,7 @@ HelloMain::HelloMain()
 	, m_pCommandAllocator(nullptr), m_pCommandQueue(nullptr), m_pCommandList(nullptr), m_pFence(nullptr)
 	, m_pRTVHeap(nullptr), m_pSRVHeap(nullptr), m_pTexture(nullptr), m_nFrameIndex(-1), m_nRTVDescriptorSize(0)
 	, m_pFenceEvent(nullptr), m_nFenceValue(0)
-	, m_pCamera(nullptr), m_pLight(nullptr), m_pRenderRect(nullptr)
+	, m_pCamera(nullptr), m_pRenderRect(nullptr)
 {
 	ZeroMemory(m_pRayList, sizeof(Ray*) * WINSIZEX * WINSIZEY);
 }
@@ -26,12 +25,9 @@ HelloMain::~HelloMain()
 
 VOID HelloMain::OnInit()
 {
-	XMFLOAT3 vCameraPos(0.f, 10.f, -13.f);
-	XMFLOAT3 vLightPos(0.f, 4.5f, 0.f);
-
 	// Create Object
+	XMFLOAT3 vCameraPos(0.f, 10.f, -20.f);
 	m_pCamera = new Camera(0.1f, 1000.f, vCameraPos, XMFLOAT3(0.f, 0.f, 0.0f));
-	m_pLight = new Light(vLightPos);
 
 	m_PixelColorList.reserve(WINSIZEX * WINSIZEY);
 
@@ -44,10 +40,17 @@ VOID HelloMain::OnInit()
 		}
 	}
 
-	m_ObjectList.push_back(new Sphere(XMFLOAT3(-2.2f, 0.f, 0.f), 1.f, XMFLOAT4(0.9f, 0.3f, 0.3f, 1.f)));
-	m_ObjectList.push_back(new Sphere(XMFLOAT3(0.f, 0.f, 0.f), 1.f, XMFLOAT4(0.3f, 0.9f, 0.3f, 1.f)));
-	m_ObjectList.push_back(new Sphere(XMFLOAT3(2.2f, 0.f, 0.f), 1.f, XMFLOAT4(0.3f, 0.3f, 0.9f, 1.f)));
+	// Light
+	Primitive* Light = new Sphere(XMFLOAT3(0.f, 5.f, 0.f), 1.f, XMFLOAT4(1.f, 1.f, 1.f, 1.f));
+	Light->SetLight(TRUE);
+	m_ObjectList.push_back(Light);
 
+	// Sphere
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(-2.2f, -3.f, 0.f), 1.f, XMFLOAT4(0.9f, 0.3f, 0.3f, 1.f)));
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(0.f, -3.f, 0.f), 1.f, XMFLOAT4(0.3f, 0.9f, 0.3f, 1.f)));
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(2.2f, -3.f, 0.f), 1.f, XMFLOAT4(0.3f, 0.3f, 0.9f, 1.f)));
+
+	// Room
 	m_ObjectList.push_back(new Box(XMFLOAT3(0.f, 0.f, 0.f), 20.f, XMFLOAT4(0.95f, 0.95f, 0.9f, 1.f), FALSE));
 
 	// Check Intersect
@@ -88,7 +91,6 @@ VOID HelloMain::OnDestroy()
 
 	delete m_pRenderRect;
 	delete m_pCamera;
-	delete m_pLight;
 
 	for (INT i = 0; i < WINSIZEX * WINSIZEY; ++i)
 		delete m_pRayList[i];
