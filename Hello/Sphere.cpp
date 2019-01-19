@@ -3,11 +3,18 @@
 #include "Ray.h"
 
 
-Sphere::Sphere(const XMFLOAT3& vPosition, FLOAT fRadius, const XMFLOAT4& vColor)
+Sphere::Sphere(const XMFLOAT3& vPosition, FLOAT fRadius, const XMFLOAT3& vEmittance, const XMFLOAT3& vColor)
 {
 	m_vPosition = vPosition;
 	m_vScale = XMFLOAT3(fRadius, fRadius, fRadius);
-	m_vColor = vColor;
+	
+	m_tMaterial.emittance = vEmittance;
+	m_tMaterial.reflectance = vColor;
+
+	if (m_tMaterial.emittance.x == 0.f && m_tMaterial.emittance.y == 0.f && m_tMaterial.emittance.z == 0.f)
+		m_tMaterial.bEmitter = FALSE;
+	else
+		m_tMaterial.bEmitter = TRUE;
 }
 
 Sphere::~Sphere()

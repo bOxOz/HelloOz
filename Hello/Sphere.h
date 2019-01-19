@@ -6,7 +6,7 @@ class Ray;
 class Sphere : public Primitive
 {
 public:
-	Sphere(const XMFLOAT3& vPosition, FLOAT fRadius, const XMFLOAT4& vColor);
+	Sphere(const XMFLOAT3& vPosition, FLOAT fRadius, const XMFLOAT3& vEmittance, const XMFLOAT3& vColor);
 	virtual ~Sphere();
 
 	BOOL Intersect(const Ray& ray, FLOAT& fIntersectDist, XMFLOAT3& vIntersectPos, XMFLOAT3& vIntersectNorm);

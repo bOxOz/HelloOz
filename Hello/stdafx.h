@@ -9,7 +9,8 @@
 
 // Leak detector
 #define _CRTDBG_MAP_ALLOC
-#include <stdlib.h>  
+#include <stdlib.h> 
+#include <fstream> 
 #include <crtdbg.h> 
 
 #include <windows.h>
@@ -40,7 +41,6 @@ extern HelloMain* g_HelloMain;
 struct Vertex
 {
 	XMFLOAT3 vPosition;
-	XMFLOAT4 vColor;
 	XMFLOAT3 vNormal;
 };
 

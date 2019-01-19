@@ -5,7 +5,7 @@
 class Box : public Primitive
 {
 public:
-	Box(const XMFLOAT3& vPosition, FLOAT fScale, const XMFLOAT4& vColor, BOOL bBackCull);
+	Box(const XMFLOAT3& vPosition, FLOAT fScale, const XMFLOAT3& vEmittance, const XMFLOAT3& vColor, BOOL bBackCull);
 	virtual ~Box();
 
 	VOID CreateShape(BOOL bBackCull);

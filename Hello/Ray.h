@@ -1,5 +1,6 @@
 #pragma once
 
+class Primitive;
 class Ray
 {
 public:
@@ -8,9 +9,16 @@ public:
 	~Ray();
 
 	VOID SetDirToWorld();
-	VOID IntersectObject();
+	BOOL IntersectObject();
+
+	static XMFLOAT4 TracePath(Ray* pRay, INT Depth = 1);
+	static XMFLOAT3 RandomUnitVectorInHemisphereOf(const XMFLOAT3& vNormal);
 
 	XMFLOAT2 m_vPixelPos;
 	XMFLOAT3 m_vOrigin;
 	XMFLOAT3 m_vDirection;
+
+	Primitive*	m_pHitObj;
+	XMFLOAT3	m_HitPosition;
+	XMFLOAT3	m_HitNormal;
 };

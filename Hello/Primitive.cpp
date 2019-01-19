@@ -3,7 +3,6 @@
 
 
 Primitive::Primitive()
-	: m_bLight(FALSE)
 {
 }
 

@@ -3,11 +3,18 @@
 #include "Hello.h"
 #include "Ray.h"
 
-Box::Box(const XMFLOAT3& vPosition, FLOAT fScale, const XMFLOAT4& vColor, BOOL bBackCull)
+Box::Box(const XMFLOAT3& vPosition, FLOAT fScale, const XMFLOAT3& vEmittance, const XMFLOAT3& vColor, BOOL bBackCull)
 {
 	m_vPosition = vPosition;
 	m_vScale = XMFLOAT3(fScale, fScale, fScale);
-	m_vColor = vColor;
+
+	m_tMaterial.emittance = vEmittance;
+	m_tMaterial.reflectance = vColor;
+
+	if (m_tMaterial.emittance.x == 0.f && m_tMaterial.emittance.y == 0.f && m_tMaterial.emittance.z == 0.f)
+		m_tMaterial.bEmitter = FALSE;
+	else
+		m_tMaterial.bEmitter = TRUE;
 
 	CreateShape(bBackCull);
 }
@@ -25,58 +32,58 @@ void Box::CreateShape(BOOL bBackCull)
 		Vertex arrVertex[]
 		{
 			// -Z
-			{ { -fBoxScale, fBoxScale, -fBoxScale },	m_vColor, { 0.f, 0.f, -1.f } },
-			{ { fBoxScale, fBoxScale, -fBoxScale },		m_vColor, { 0.f, 0.f, -1.f } },
-			{ { fBoxScale, -fBoxScale, -fBoxScale },	m_vColor, { 0.f, 0.f, -1.f } },
-
-			{ { -fBoxScale, fBoxScale, -fBoxScale },	m_vColor,{ 0.f, 0.f, -1.f } },
-			{ { fBoxScale, -fBoxScale, -fBoxScale },	m_vColor,{ 0.f, 0.f, -1.f } },
-			{ { -fBoxScale, -fBoxScale, -fBoxScale },	m_vColor, { 0.f, 0.f, -1.f } },
+			{ { -fBoxScale, fBoxScale, -fBoxScale },	{ 0.f, 0.f, -1.f } },
+			{ { fBoxScale, fBoxScale, -fBoxScale },		{ 0.f, 0.f, -1.f } },
+			{ { fBoxScale, -fBoxScale, -fBoxScale },	{ 0.f, 0.f, -1.f } },
+			
+			{ { -fBoxScale, fBoxScale, -fBoxScale },	{ 0.f, 0.f, -1.f } },
+			{ { fBoxScale, -fBoxScale, -fBoxScale },	{ 0.f, 0.f, -1.f } },
+			{ { -fBoxScale, -fBoxScale, -fBoxScale },	{ 0.f, 0.f, -1.f } },
 			
 			// Z
-			{ { -fBoxScale, -fBoxScale, fBoxScale },	m_vColor,{ 0.f, 0.f, 1.f } },
-			{ { fBoxScale, -fBoxScale, fBoxScale },		m_vColor,{ 0.f, 0.f, 1.f } },
-			{ { fBoxScale, fBoxScale, fBoxScale },		m_vColor,{ 0.f, 0.f, 1.f } },
-
-			{ { -fBoxScale, -fBoxScale, fBoxScale },	m_vColor,{ 0.f, 0.f, 1.f } },
-			{ { fBoxScale, fBoxScale, fBoxScale },		m_vColor,{ 0.f, 0.f, 1.f } },
-			{ { -fBoxScale, fBoxScale, fBoxScale },		m_vColor, { 0.f, 0.f, 1.f } },
-
+			{ { -fBoxScale, -fBoxScale, fBoxScale },	{ 0.f, 0.f, 1.f } },
+			{ { fBoxScale, -fBoxScale, fBoxScale },		{ 0.f, 0.f, 1.f } },
+			{ { fBoxScale, fBoxScale, fBoxScale },		{ 0.f, 0.f, 1.f } },
+			
+			{ { -fBoxScale, -fBoxScale, fBoxScale },	{ 0.f, 0.f, 1.f } },
+			{ { fBoxScale, fBoxScale, fBoxScale },		{ 0.f, 0.f, 1.f } },
+			{ { -fBoxScale, fBoxScale, fBoxScale },		{ 0.f, 0.f, 1.f } },
+			
 			// -X
-			{ { -fBoxScale, fBoxScale, fBoxScale },		m_vColor,{ -1.f, 0.f, 0.f } },
-			{ { -fBoxScale, fBoxScale, -fBoxScale },	m_vColor,{ -1.f, 0.f, 0.f } },
-			{ { -fBoxScale, -fBoxScale, -fBoxScale },	m_vColor,{ -1.f, 0.f, 0.f } },
-
-			{ { -fBoxScale, fBoxScale, fBoxScale },		m_vColor,{ -1.f, 0.f, 0.f } },
-			{ { -fBoxScale, -fBoxScale, -fBoxScale },	m_vColor,{ -1.f, 0.f, 0.f } },
-			{ { -fBoxScale, -fBoxScale, fBoxScale },	m_vColor,{ -1.f, 0.f, 0.f } },
-
+			{ { -fBoxScale, fBoxScale, fBoxScale },		{ -1.f, 0.f, 0.f } },
+			{ { -fBoxScale, fBoxScale, -fBoxScale },	{ -1.f, 0.f, 0.f } },
+			{ { -fBoxScale, -fBoxScale, -fBoxScale },	{ -1.f, 0.f, 0.f } },
+			
+			{ { -fBoxScale, fBoxScale, fBoxScale },		{ -1.f, 0.f, 0.f } },
+			{ { -fBoxScale, -fBoxScale, -fBoxScale },	{ -1.f, 0.f, 0.f } },
+			{ { -fBoxScale, -fBoxScale, fBoxScale },	{ -1.f, 0.f, 0.f } },
+			
 			// X
-			{ { fBoxScale, fBoxScale, -fBoxScale },		m_vColor,{ 1.f, 0.f, 0.f } },
-			{ { fBoxScale, fBoxScale, fBoxScale },		m_vColor,{ 1.f, 0.f, 0.f } },
-			{ { fBoxScale, -fBoxScale, fBoxScale },		m_vColor,{ 1.f, 0.f, 0.f } },
-
-			{ { fBoxScale, fBoxScale, -fBoxScale },		m_vColor,{ 1.f, 0.f, 0.f } },
-			{ { fBoxScale, -fBoxScale, fBoxScale },		m_vColor,{ 1.f, 0.f, 0.f } },
-			{ { fBoxScale, -fBoxScale, -fBoxScale },	m_vColor,{ 1.f, 0.f, 0.f } },
-
+			{ { fBoxScale, fBoxScale, -fBoxScale },		{ 1.f, 0.f, 0.f } },
+			{ { fBoxScale, fBoxScale, fBoxScale },		{ 1.f, 0.f, 0.f } },
+			{ { fBoxScale, -fBoxScale, fBoxScale },		{ 1.f, 0.f, 0.f } },
+			
+			{ { fBoxScale, fBoxScale, -fBoxScale },		{ 1.f, 0.f, 0.f } },
+			{ { fBoxScale, -fBoxScale, fBoxScale },		{ 1.f, 0.f, 0.f } },
+			{ { fBoxScale, -fBoxScale, -fBoxScale },	{ 1.f, 0.f, 0.f } },
+			
 			// -Y
-			{ { -fBoxScale, -fBoxScale, -fBoxScale },	m_vColor,{ 0.f, -1.f, 0.f } },
-			{ { fBoxScale, -fBoxScale, -fBoxScale },	m_vColor,{ 0.f, -1.f, 0.f } },
-			{ { fBoxScale, -fBoxScale, fBoxScale },		m_vColor,{ 0.f, -1.f, 0.f } },
-
-			{ { -fBoxScale, -fBoxScale, -fBoxScale },	m_vColor,{ 0.f, -1.f, 0.f } },
-			{ { fBoxScale, -fBoxScale, fBoxScale },		m_vColor,{ 0.f, -1.f, 0.f } },
-			{ { -fBoxScale, -fBoxScale, fBoxScale },	m_vColor,{ 0.f, -1.f, 0.f } },
+			{ { -fBoxScale, -fBoxScale, -fBoxScale },	{ 0.f, -1.f, 0.f } },
+			{ { fBoxScale, -fBoxScale, -fBoxScale },	{ 0.f, -1.f, 0.f } },
+			{ { fBoxScale, -fBoxScale, fBoxScale },		{ 0.f, -1.f, 0.f } },
+			
+			{ { -fBoxScale, -fBoxScale, -fBoxScale },	{ 0.f, -1.f, 0.f } },
+			{ { fBoxScale, -fBoxScale, fBoxScale },		{ 0.f, -1.f, 0.f } },
+			{ { -fBoxScale, -fBoxScale, fBoxScale },	{ 0.f, -1.f, 0.f } },
 
 			// Y
-			{ { -fBoxScale, fBoxScale, fBoxScale },		m_vColor,{ 0.f, 1.f, 0.f } },
-			{ { fBoxScale, fBoxScale, fBoxScale },		m_vColor,{ 0.f, 1.f, 0.f } },
-			{ { fBoxScale, fBoxScale, -fBoxScale },		m_vColor,{ 0.f, 1.f, 0.f } },
-
-			{ { -fBoxScale, fBoxScale, fBoxScale },		m_vColor,{ 0.f, 1.f, 0.f } },
-			{ { fBoxScale, fBoxScale, -fBoxScale },		m_vColor,{ 0.f, 1.f, 0.f } },
-			{ { -fBoxScale, fBoxScale, -fBoxScale },	m_vColor,{ 0.f, 1.f, 0.f } }
+			{ { -fBoxScale, fBoxScale, fBoxScale },		{ 0.f, 1.f, 0.f } },
+			{ { fBoxScale, fBoxScale, fBoxScale },		{ 0.f, 1.f, 0.f } },
+			{ { fBoxScale, fBoxScale, -fBoxScale },		{ 0.f, 1.f, 0.f } },
+			
+			{ { -fBoxScale, fBoxScale, fBoxScale },		{ 0.f, 1.f, 0.f } },
+			{ { fBoxScale, fBoxScale, -fBoxScale },		{ 0.f, 1.f, 0.f } },
+			{ { -fBoxScale, fBoxScale, -fBoxScale },	{ 0.f, 1.f, 0.f } }
 		};
 
 		for (auto vtx : arrVertex)
@@ -109,7 +116,7 @@ BOOL Box::Intersect(const Ray& ray, FLOAT& fIntersectDist, XMFLOAT3& vIntersectP
 	memcpy(&vRayPos, &ray.m_vOrigin, sizeof(D3DXVECTOR3));
 	memcpy(&vRayDir, &ray.m_vDirection, sizeof(D3DXVECTOR3));
 
-	FLOAT fDist = 0.f, fMinDist = fIntersectDist;
+	FLOAT fDist = 0.f, fMinDist = 1000.f;
 
 	for (UINT i = 0; i < m_arrVertex.size(); i += 3)
 	{

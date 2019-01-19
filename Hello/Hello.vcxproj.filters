@@ -45,6 +45,9 @@
     <ClInclude Include="Primitive.h">
       <Filter>Object</Filter>
     </ClInclude>
+    <ClInclude Include="Device.h">
+      <Filter>Object</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Hello.cpp">
@@ -72,6 +75,9 @@
       <Filter>Object</Filter>
     </ClCompile>
     <ClCompile Include="Primitive.cpp">
+      <Filter>Object</Filter>
+    </ClCompile>
+    <ClCompile Include="Device.cpp">
       <Filter>Object</Filter>
     </ClCompile>
   </ItemGroup>

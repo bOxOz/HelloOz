@@ -162,6 +162,7 @@
     <ClInclude Include="Box.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="d3dx12.h" />
+    <ClInclude Include="Device.h" />
     <ClInclude Include="Hello.h" />
     <ClInclude Include="Primitive.h" />
     <ClInclude Include="Ray.h" />
@@ -173,6 +174,7 @@
   <ItemGroup>
     <ClCompile Include="Box.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="Device.cpp" />
     <ClCompile Include="Hello.cpp" />
     <ClCompile Include="Primitive.cpp" />
     <ClCompile Include="Ray.cpp" />
