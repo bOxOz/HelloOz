@@ -60,7 +60,7 @@ BOOL Ray::IntersectObject()
 
 XMFLOAT4 Ray::TracePath(Ray* pRay, INT Depth/*=1*/)
 {
-	if (Depth > 3)
+	if (Depth > 5)
 		return BLACK;
 	
 	if (pRay->IntersectObject() == FALSE)
@@ -77,9 +77,9 @@ XMFLOAT4 Ray::TracePath(Ray* pRay, INT Depth/*=1*/)
 	XMFLOAT4 reflected = XMFLOAT4(0.f, 0.f, 0.f, 0.f);
 
 	if(material.bEmitter == FALSE)
-		reflected = TracePath(&newRay, ++Depth);
+		reflected = TracePath(&newRay, Depth + 1);
 
-	return XMFLOAT4(material.emittance.x + (BRDF.x * reflected.x), 
+	return XMFLOAT4(material.emittance.x + (BRDF.x * reflected.x),
 					material.emittance.y + (BRDF.y * reflected.y),
 					material.emittance.z + (BRDF.z * reflected.z), 1.f);
 }
@@ -87,7 +87,7 @@ XMFLOAT4 Ray::TracePath(Ray* pRay, INT Depth/*=1*/)
 FLOAT rand_float()
 {
 	// return -1.f ~ 1.f
-	return ((rand() % 20000) / 10000.f) - 1.f;
+	return ((rand() % 20000) * 0.0001f) - 1.f;
 }
 
 XMFLOAT3 Ray::RandomUnitVectorInHemisphereOf(const XMFLOAT3& vNormal)
@@ -97,7 +97,7 @@ XMFLOAT3 Ray::RandomUnitVectorInHemisphereOf(const XMFLOAT3& vNormal)
 	randomVector = XMVector3Normalize(randomVector);
 
 	XMFLOAT3 result;
-	XMStoreFloat3(&result, randomVector);	
+	XMStoreFloat3(&result, randomVector);
 
 	return result;
 }

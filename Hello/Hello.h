@@ -17,6 +17,8 @@ public:
 	VOID OnRender();
 	VOID OnDestroy();
 
+	VOID CreateObject();
+
 	ComPtr<ID3D12Device> GetDevice() { return m_pD3D12Device->GetDevice(); }
 	Camera* GetCamera() { return m_pCamera; }
 
@@ -27,6 +29,7 @@ public:
 	std::vector<XMFLOAT4>	m_PixelColorList;
 	Rect*					m_pRenderRect;
 
+	std::vector<XMFLOAT4>	m_DebugPixelColorList[WINSIZEX * WINSIZEY];
 
 private:
 	Device*					m_pD3D12Device;

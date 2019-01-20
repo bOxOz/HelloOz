@@ -35,8 +35,8 @@ extern HelloMain* g_HelloMain;
 
 #define GetMainDevice() g_HelloMain->GetDevice()
 
-#define WINSIZEX 800
-#define WINSIZEY 600
+#define WINSIZEX 640
+#define WINSIZEY 360
 
 struct Vertex
 {
