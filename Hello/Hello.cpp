@@ -23,21 +23,24 @@ VOID HelloMain::OnInit()
 	CreateObject();
 
 	// Check Intersect
-	int nSampleNum = 5000;
+	int nSampleNum = 100;
 	for (int i = 0; i < WINSIZEX * WINSIZEY; ++i)
 	{
+		//if (i != 287 + (WINSIZEX * 254))
+		//	continue;
+
 		INT nHit = 0;
 	
 		for (INT sample = 0; sample < nSampleNum; ++sample)
 		{
-			XMFLOAT4 res = Ray::TracePath(m_pRayList[i]);
-			bool bHit = (res.x > 0.f || res.y > 0.f || res.z > 0.f);
-	
-			if (bHit)
+			XMFLOAT4 res = Ray::TracePath(m_pRayList[i]);	
+			if (res.x > 0.f || res.y > 0.f || res.z > 0.f)
 			{
 				++nHit;
 				m_PixelColorList[i] = XMFLOAT4(m_PixelColorList[i].x + res.x, m_PixelColorList[i].y + res.y, m_PixelColorList[i].z + res.z, 1.f);
-				//m_DebugPixelColorList[i].push_back(res);
+#if DEBUG_RAYCOLOR
+				m_DebugPixelColorList[i].push_back(res);
+#endif
 			}
 		}
 	
@@ -100,8 +103,8 @@ VOID HelloMain::OnDestroy()
 VOID HelloMain::CreateObject()
 {
 	// Camera
-	XMFLOAT3 vCameraPos(0.f, 0.f, -20.f);
-	m_pCamera = new Camera(0.1f, 1000.f, vCameraPos, XMFLOAT3(0.f, -7.f, 0.0f));
+	XMFLOAT3 vCameraPos(0.f, -8.5f, -7.f);
+	m_pCamera = new Camera(0.1f, 1000.f, vCameraPos, XMFLOAT3(0.f, -8.5f, 0.0f));
 
 	for (INT y = 0; y < WINSIZEY; ++y)
 	{
@@ -113,15 +116,18 @@ VOID HelloMain::CreateObject()
 	}
 
 	// Sphere
-	m_ObjectList.push_back(new Sphere(XMFLOAT3(0.f, -7.f, 2.f), 3.f, XMFLOAT3(1.f, 1.f, 1.f), XMFLOAT3(1.f, 1.f, 1.f)));
-
-	m_ObjectList.push_back(new Sphere(XMFLOAT3(-4.f, -9.f, 2.f), 1.f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(0.9f, 0.3f, 0.3f)));
-	m_ObjectList.push_back(new Sphere(XMFLOAT3(-2.f, -9.f, -2.f), 1.f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(0.9f, 0.6f, 0.3f)));
-	m_ObjectList.push_back(new Sphere(XMFLOAT3(2.f, -9.f, -2.f), 1.f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(0.9f, 0.9f, 0.3f)));
-	m_ObjectList.push_back(new Sphere(XMFLOAT3(4.f, -9.f, 2.f), 1.f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(0.3f, 0.6f, 0.3f)));
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(0.f, -3.f, 0.f), 3.f, XMFLOAT3(1.f, 1.f, 1.f), XMFLOAT3(1.f, 1.f, 1.f)));
+	
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(0.f, -8.5f, 3.5f), 1.5f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(0.f, 0.f, 0.f), 1.f));
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(4.f, -7.7f, 3.6f), 2.3f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(1.f, 0.f, 0.f)));
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(2.f, -9.f, 0.f), 1.f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(1.f, 1.f, 0.f)));
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(-1.f, -9.5f, 0.f), 0.5f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(0.f, 1.f, 0.f)));
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(-2.5f, -9.f, -1.f), 1.f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(0.f, 1.f, 1.f)));
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(-3.8f, -8.f, 3.5f), 2.f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(0.f, 0.f, 1.f)));
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(-2.f, -9.3f, 8.f), 0.7f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(1.f, 0.f, 1.f)));
 
 	// Room
-	m_ObjectList.push_back(new Box(XMFLOAT3(0.f, 0.f, 0.f), 20.f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(0.95f, 0.95f, 0.9f), FALSE));
+	m_ObjectList.push_back(new Box(XMFLOAT3(0.f, 0.f, 0.f), 20.f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(1.f, 1.f, 1.f), FALSE));
 }
 
 VOID ThrowIfFailed(HRESULT hr)

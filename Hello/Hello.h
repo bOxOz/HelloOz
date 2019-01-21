@@ -29,7 +29,9 @@ public:
 	std::vector<XMFLOAT4>	m_PixelColorList;
 	Rect*					m_pRenderRect;
 
+#if DEBUG_RAYCOLOR
 	std::vector<XMFLOAT4>	m_DebugPixelColorList[WINSIZEX * WINSIZEY];
+#endif
 
 private:
 	Device*					m_pD3D12Device;

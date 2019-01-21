@@ -3,15 +3,16 @@
 #include "Ray.h"
 
 
-Sphere::Sphere(const XMFLOAT3& vPosition, FLOAT fRadius, const XMFLOAT3& vEmittance, const XMFLOAT3& vColor)
+Sphere::Sphere(const XMFLOAT3& vPosition, FLOAT fRadius, const XMFLOAT3& vEmittance, const XMFLOAT3& vColor, const FLOAT fSpecular/*=0.f*/)
 {
 	m_vPosition = vPosition;
 	m_vScale = XMFLOAT3(fRadius, fRadius, fRadius);
 	
-	m_tMaterial.emittance = vEmittance;
-	m_tMaterial.reflectance = vColor;
+	m_tMaterial.vEmittance = vEmittance;
+	m_tMaterial.vBaseColor = vColor;
+	m_tMaterial.fSpecular = fSpecular;
 
-	if (m_tMaterial.emittance.x == 0.f && m_tMaterial.emittance.y == 0.f && m_tMaterial.emittance.z == 0.f)
+	if (m_tMaterial.vEmittance.x == 0.f && m_tMaterial.vEmittance.y == 0.f && m_tMaterial.vEmittance.z == 0.f)
 		m_tMaterial.bEmitter = FALSE;
 	else
 		m_tMaterial.bEmitter = TRUE;

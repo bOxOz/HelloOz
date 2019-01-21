@@ -41,15 +41,21 @@ BOOL Ray::IntersectObject()
 	XMFLOAT3 vIntersectNorm { 0.f, 0.f, 0.f };
 
 	FLOAT fDist = 1000.f;
+	FLOAT fMinDist = 1000.f;
 
 	for (auto obj : g_HelloMain->m_ObjectList)
 	{
 		if (obj->Intersect(*this, fDist, vIntersectPos, vIntersectNorm))
 		{
-			m_pHitObj = obj;
-			m_HitPosition = vIntersectPos;
+			if (fDist < fMinDist)
+			{
+				fMinDist = fDist;
 
-			XMStoreFloat3(&m_HitNormal, XMVector3Normalize(XMLoadFloat3(&vIntersectNorm)));
+				m_pHitObj = obj;
+				m_HitPosition = vIntersectPos;
+
+				XMStoreFloat3(&m_HitNormal, XMVector3Normalize(XMLoadFloat3(&vIntersectNorm)));
+			}
 		}
 	}
 
@@ -65,23 +71,44 @@ XMFLOAT4 Ray::TracePath(Ray* pRay, INT Depth/*=1*/)
 	
 	if (pRay->IntersectObject() == FALSE)
 		return BLACK;
-	
-	Ray newRay(pRay->m_HitPosition, RandomUnitVectorInHemisphereOf(pRay->m_HitNormal));
-
-	FLOAT cos_theta = 1.f;
-	XMStoreFloat(&cos_theta, XMVector3Dot(XMLoadFloat3(&newRay.m_vDirection), XMLoadFloat3(&pRay->m_HitNormal)));
 
 	Material material = pRay->m_pHitObj->GetMaterial();
+	
+	Ray newRay(pRay->m_HitPosition, material.fSpecular > 0.f ? pRay->m_HitNormal : RandomUnitVectorInHemisphereOf(pRay->m_HitNormal));
 
-	XMFLOAT3 BRDF = XMFLOAT3(material.reflectance.x * cos_theta, material.reflectance.y * cos_theta, material.reflectance.z * cos_theta);
 	XMFLOAT4 reflected = XMFLOAT4(0.f, 0.f, 0.f, 0.f);
+	//XMFLOAT3 Specular = XMFLOAT3(0.f, 0.f, 0.f);
 
 	if(material.bEmitter == FALSE)
 		reflected = TracePath(&newRay, Depth + 1);
 
-	return XMFLOAT4(material.emittance.x + (BRDF.x * reflected.x),
-					material.emittance.y + (BRDF.y * reflected.y),
-					material.emittance.z + (BRDF.z * reflected.z), 1.f);
+	//if (material.fSpecular > 0.f)
+	//{
+	//	// 반사 벡터를 구한다.
+	//	//XMVECTOR lightDir = XMLoadFloat3(&newRay.m_vDirection) * -1.f;
+	//	//XMVECTOR objNomral = XMLoadFloat3(&pRay->m_HitNormal);
+	//	//XMFLOAT3 reflectDir;
+	//	//XMStoreFloat3(&reflectDir, lightDir + (2 * objNomral * XMVector3Dot(-lightDir, objNomral)));
+	//
+	//	// 새 Ray를 만든다.
+	//	Ray reflectRay(pRay->m_HitPosition, pRay->m_HitNormal);
+	//	if (reflectRay.IntersectObject())
+	//	{
+	//		Specular = reflectRay.m_pHitObj->GetMaterial().vBaseColor;
+	//	}
+	//}
+
+	//if (newRay.m_pHitObj)
+	//	Specular = newRay.m_pHitObj->GetMaterial().vBaseColor;
+
+	FLOAT cos_theta = 1.f;
+	XMStoreFloat(&cos_theta, XMVector3Dot(XMLoadFloat3(&newRay.m_vDirection), XMLoadFloat3(&pRay->m_HitNormal)));
+
+	XMFLOAT3 BRDF = XMFLOAT3(material.vBaseColor.x * cos_theta, material.vBaseColor.y * cos_theta, material.vBaseColor.z * cos_theta);
+
+	return XMFLOAT4(material.vEmittance.x + (BRDF.x * reflected.x/* *(1.f - material.fSpecular)*/) + (reflected.x * material.fSpecular),
+					material.vEmittance.y + (BRDF.y * reflected.y/* *(1.f - material.fSpecular)*/) + (reflected.y * material.fSpecular),
+					material.vEmittance.z + (BRDF.z * reflected.z/* *(1.f - material.fSpecular)*/) + (reflected.z * material.fSpecular), 1.f);
 }
 
 FLOAT rand_float()

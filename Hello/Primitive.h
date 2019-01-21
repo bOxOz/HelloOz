@@ -1,8 +1,9 @@
 #pragma once
 
 struct Material {
-	XMFLOAT3 emittance;
-	XMFLOAT3 reflectance;
+	XMFLOAT3 vEmittance;
+	XMFLOAT3 vBaseColor;
+	FLOAT	 fSpecular;
 
 	BOOL bEmitter;
 };

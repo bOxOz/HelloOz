@@ -38,6 +38,8 @@ extern HelloMain* g_HelloMain;
 #define WINSIZEX 640
 #define WINSIZEY 360
 
+#define DEBUG_RAYCOLOR 0
+
 struct Vertex
 {
 	XMFLOAT3 vPosition;

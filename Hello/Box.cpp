@@ -8,10 +8,10 @@ Box::Box(const XMFLOAT3& vPosition, FLOAT fScale, const XMFLOAT3& vEmittance, co
 	m_vPosition = vPosition;
 	m_vScale = XMFLOAT3(fScale, fScale, fScale);
 
-	m_tMaterial.emittance = vEmittance;
-	m_tMaterial.reflectance = vColor;
+	m_tMaterial.vEmittance = vEmittance;
+	m_tMaterial.vBaseColor = vColor;
 
-	if (m_tMaterial.emittance.x == 0.f && m_tMaterial.emittance.y == 0.f && m_tMaterial.emittance.z == 0.f)
+	if (m_tMaterial.vEmittance.x == 0.f && m_tMaterial.vEmittance.y == 0.f && m_tMaterial.vEmittance.z == 0.f)
 		m_tMaterial.bEmitter = FALSE;
 	else
 		m_tMaterial.bEmitter = TRUE;
