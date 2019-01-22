@@ -39,16 +39,16 @@ extern HelloMain* g_HelloMain;
 #define WINSIZEX 640
 #define WINSIZEY 360
 
-#define NUM_SAMPLE 5000
+#define NUM_SAMPLE 10
 #define MAX_DEPTH 5
 #define DEBUG_RAYCOLOR _DEBUG
 
-#define NUM_WORKERTHREAD 7
+#define NUM_WORKERTHREAD 0
 
 struct Vertex
 {
-	XMFLOAT3 vPosition;
-	XMFLOAT3 vNormal;
+	D3DXVECTOR3 vPosition;
+	D3DXVECTOR3 vNormal;
 };
 
 struct VtxTex

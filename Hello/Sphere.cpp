@@ -24,7 +24,7 @@ Sphere::~Sphere()
 
 BOOL Sphere::Intersect(const Ray& ray, FLOAT& fIntersectDist, XMFLOAT3& vIntersectPos, XMFLOAT3& vIntersectNorm)
 {
-	XMVECTOR l = XMLoadFloat3(&m_vPosition) - XMLoadFloat3(&ray.m_vOrigin);
+	XMVECTOR l = XMLoadFloat3(&XMFLOAT3(m_vPosition.x - ray.m_vOrigin.x, m_vPosition.y - ray.m_vOrigin.y, m_vPosition.z - ray.m_vOrigin.z));
 
 	FLOAT s, l2;
 	XMStoreFloat(&s, XMVector3Dot(l, XMLoadFloat3(&ray.m_vDirection)));
@@ -47,8 +47,11 @@ BOOL Sphere::Intersect(const Ray& ray, FLOAT& fIntersectDist, XMFLOAT3& vInterse
 	else
 		fIntersectDist = s + q;
 
-	XMStoreFloat3(&vIntersectPos, XMLoadFloat3(&ray.m_vOrigin) + fIntersectDist * XMLoadFloat3(&ray.m_vDirection));
-	XMStoreFloat3(&vIntersectNorm, XMLoadFloat3(&vIntersectPos) - XMLoadFloat3(&m_vPosition));
+	vIntersectPos = XMFLOAT3(ray.m_vOrigin.x + fIntersectDist * ray.m_vDirection.x,
+							 ray.m_vOrigin.x + fIntersectDist * ray.m_vDirection.y,
+							 ray.m_vOrigin.x + fIntersectDist * ray.m_vDirection.z);
+
+	vIntersectNorm = XMFLOAT3(vIntersectPos.x - m_vPosition.x, vIntersectPos.y - m_vPosition.y, vIntersectPos.z - m_vPosition.z);
 	
 	return TRUE;
 }

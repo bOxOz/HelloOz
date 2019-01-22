@@ -15,4 +15,5 @@ public:
 
 private:
 	std::vector<Vertex>		m_arrVertex;
+	size_t					m_nVtxCnt;
 };

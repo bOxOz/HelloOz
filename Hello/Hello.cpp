@@ -21,6 +21,7 @@ VOID HelloMain::OnInit()
 {
 	CreateObject();
 
+#if NUM_WORKERTHREAD
 	std::thread* workerThread[NUM_WORKERTHREAD] { nullptr };
 	for (int iWorkerThread = 0; iWorkerThread < NUM_WORKERTHREAD; ++iWorkerThread)
 	{
@@ -30,9 +31,11 @@ VOID HelloMain::OnInit()
 		std::thread* worker = new std::thread(DoPathTracing, iWorkerThread + 1, &m_PixelColorList[iStartPixel]);
 		workerThread[iWorkerThread] = worker;
 	}
+#endif
 	
 	DoPathTracing(0, &m_PixelColorList[0]);
 	
+#if NUM_WORKERTHREAD
 	for (int iWorkerThread = 0; iWorkerThread < NUM_WORKERTHREAD; ++iWorkerThread)
 	{
 		std::thread* worker = workerThread[iWorkerThread];
@@ -41,6 +44,7 @@ VOID HelloMain::OnInit()
 	
 		workerThread[iWorkerThread] = nullptr;
 	}
+#endif
 
 	SaveImage("../bin/test.bmp");
 
