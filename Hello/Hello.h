@@ -21,10 +21,10 @@ public:
 
 	ComPtr<ID3D12Device> GetDevice() { return m_pD3D12Device->GetDevice(); }
 	Camera* GetCamera() { return m_pCamera; }
+	std::vector<XMFLOAT4>& GetColorList() { return m_PixelColorList; }
 
 	std::vector<Primitive*> m_ObjectList;
 	Camera*					m_pCamera;
-	Ray*					m_pRayList[WINSIZEX * WINSIZEY];
 
 	std::vector<XMFLOAT4>	m_PixelColorList;
 	Rect*					m_pRenderRect;
@@ -37,5 +37,6 @@ private:
 	Device*					m_pD3D12Device;
 };
 
+VOID DoPathTracing(INT iThread, XMFLOAT4* PixelColorList);
 VOID ThrowIfFailed(HRESULT hr);
-bool SaveImage(const std::string& szPathName, const std::vector<char>& lpBits, int w, int h);
+bool SaveImage(const std::string& szPathName);

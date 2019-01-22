@@ -10,7 +10,6 @@
 HelloMain::HelloMain()
 	: m_pD3D12Device(nullptr), m_pCamera(nullptr)
 {
-	ZeroMemory(m_pRayList, sizeof(Ray*) * WINSIZEX * WINSIZEY);
 }
 
 HelloMain::~HelloMain()
@@ -22,47 +21,28 @@ VOID HelloMain::OnInit()
 {
 	CreateObject();
 
-	// Check Intersect
-	int nSampleNum = 100;
-	for (int i = 0; i < WINSIZEX * WINSIZEY; ++i)
+	std::thread* workerThread[NUM_WORKERTHREAD] { nullptr };
+	for (int iWorkerThread = 0; iWorkerThread < NUM_WORKERTHREAD; ++iWorkerThread)
 	{
-		//if (i != 287 + (WINSIZEX * 254))
-		//	continue;
+		INT nQuota = (WINSIZEX * WINSIZEY) / (NUM_WORKERTHREAD + 1);
+		INT iStartPixel = nQuota * (iWorkerThread + 1);
 
-		INT nHit = 0;
+		std::thread* worker = new std::thread(DoPathTracing, iWorkerThread + 1, &m_PixelColorList[iStartPixel]);
+		workerThread[iWorkerThread] = worker;
+	}
 	
-		for (INT sample = 0; sample < nSampleNum; ++sample)
-		{
-			XMFLOAT4 res = Ray::TracePath(m_pRayList[i]);	
-			if (res.x > 0.f || res.y > 0.f || res.z > 0.f)
-			{
-				++nHit;
-				m_PixelColorList[i] = XMFLOAT4(m_PixelColorList[i].x + res.x, m_PixelColorList[i].y + res.y, m_PixelColorList[i].z + res.z, 1.f);
-#if DEBUG_RAYCOLOR
-				m_DebugPixelColorList[i].push_back(res);
-#endif
-			}
-		}
+	DoPathTracing(0, &m_PixelColorList[0]);
 	
-		if(nHit)
-			m_PixelColorList[i] = XMFLOAT4(m_PixelColorList[i].x / nHit, m_PixelColorList[i].y / nHit, m_PixelColorList[i].z / nHit, 1.f);
+	for (int iWorkerThread = 0; iWorkerThread < NUM_WORKERTHREAD; ++iWorkerThread)
+	{
+		std::thread* worker = workerThread[iWorkerThread];
+		worker->join();
+		delete worker;
+	
+		workerThread[iWorkerThread] = nullptr;
 	}
 
-	std::vector<char> pixel;
-	pixel.reserve(WINSIZEX * WINSIZEY);
-
-	for (INT y = WINSIZEY - 1; y >= 0; --y)
-	{
-		for (INT x = 0; x < WINSIZEX; ++x)
-		{
-			INT i = (y * WINSIZEX) + x;
-			pixel.push_back(m_PixelColorList[i].z * 255);
-			pixel.push_back(m_PixelColorList[i].y * 255);
-			pixel.push_back(m_PixelColorList[i].x * 255);
-		}
-	}
-
-	SaveImage("../bin/test.bmp", pixel, WINSIZEX, WINSIZEY);
+	SaveImage("../bin/test.bmp");
 
 	// Device
 	m_pD3D12Device = new Device();
@@ -90,9 +70,6 @@ VOID HelloMain::OnDestroy()
 	delete m_pRenderRect;
 	delete m_pCamera;
 
-	for (INT i = 0; i < WINSIZEX * WINSIZEY; ++i)
-		delete m_pRayList[i];
-
 	for (INT i = 0; i < m_ObjectList.size(); ++i)
 		delete m_ObjectList[i];
 
@@ -110,13 +87,12 @@ VOID HelloMain::CreateObject()
 	{
 		for (INT x = 0; x < WINSIZEX; ++x)
 		{
-			m_pRayList[(y * WINSIZEX) + x] = new Ray(XMFLOAT2(FLOAT(x), FLOAT(y)), vCameraPos);
 			m_PixelColorList.push_back(XMFLOAT4(0.f, 0.f, 0.f, 1.f));
 		}
 	}
 
 	// Sphere
-	m_ObjectList.push_back(new Sphere(XMFLOAT3(0.f, -3.f, 0.f), 3.f, XMFLOAT3(1.f, 1.f, 1.f), XMFLOAT3(1.f, 1.f, 1.f)));
+	//m_ObjectList.push_back(new Sphere(XMFLOAT3(0.f, -3.f, 0.f), 3.f, XMFLOAT3(1.f, 1.f, 1.f), XMFLOAT3(1.f, 1.f, 1.f)));
 	
 	m_ObjectList.push_back(new Sphere(XMFLOAT3(0.f, -8.5f, 3.5f), 1.5f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(0.f, 0.f, 0.f), 1.f));
 	m_ObjectList.push_back(new Sphere(XMFLOAT3(4.f, -7.7f, 3.6f), 2.3f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(1.f, 0.f, 0.f)));
@@ -130,25 +106,59 @@ VOID HelloMain::CreateObject()
 	m_ObjectList.push_back(new Box(XMFLOAT3(0.f, 0.f, 0.f), 20.f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(1.f, 1.f, 1.f), FALSE));
 }
 
+VOID DoPathTracing(INT iThread, XMFLOAT4* PixelColorList)
+{
+	INT nQuota = (WINSIZEX * WINSIZEY) / (NUM_WORKERTHREAD + 1);
+	INT iStartPixel = nQuota * iThread;
+	INT iEndPixel = nQuota * (iThread + 1);
+
+	XMFLOAT3 vCameraPos = g_HelloMain->GetCamera()->GetPosition();
+
+	for (int iPixel = iStartPixel; iPixel < iEndPixel; ++iPixel)
+	{
+		INT nHit = 0;
+		XMFLOAT4 vTotalResult(0.f, 0.f, 0.f, 1.f);
+
+		for (INT iSample = 0; iSample < NUM_SAMPLE; ++iSample)
+		{
+			INT nDepth = 1;
+			Ray newRay = Ray(XMFLOAT2(FLOAT(iPixel % WINSIZEX), FLOAT(iPixel / WINSIZEX)), vCameraPos);
+
+			XMFLOAT4 res = Ray::TracePath(&newRay, nDepth);
+			if (res.x > 0.3f || res.y > 0.3f || res.z > 0.3f)
+			{
+				++nHit;
+				vTotalResult = XMFLOAT4(vTotalResult.x + res.x, vTotalResult.y + res.y, vTotalResult.z + res.z, 1.f);
+#if DEBUG_RAYCOLOR
+				//m_DebugPixelColorList[i].push_back(res);
+#endif
+			}
+		}
+
+		if (nHit)
+			PixelColorList[iPixel - iStartPixel] = XMFLOAT4(vTotalResult.x / nHit, vTotalResult.y / nHit, vTotalResult.z / nHit, 1.f);
+	}
+}
+
 VOID ThrowIfFailed(HRESULT hr)
 {
 	if (FAILED(hr))
 		throw std::exception();
 }
 
-bool SaveImage(const std::string& szPathName, const std::vector<char>& lpBits, int w, int h) {
+bool SaveImage(const std::string& szPathName) {
 	std::ofstream pFile(szPathName, std::ios_base::binary);
 	if (!pFile.is_open())
 		return false;
 
 	BITMAPINFOHEADER bmih;
 	bmih.biSize = sizeof(BITMAPINFOHEADER);
-	bmih.biWidth = w;
-	bmih.biHeight = h;
+	bmih.biWidth = WINSIZEX;
+	bmih.biHeight = WINSIZEY;
 	bmih.biPlanes = 1;
 	bmih.biBitCount = 24;
 	bmih.biCompression = BI_RGB;
-	bmih.biSizeImage = w * h * 3;
+	bmih.biSizeImage = WINSIZEX * WINSIZEY * 3;
 
 	BITMAPFILEHEADER bmfh;
 	int nBitsOffset = sizeof(BITMAPFILEHEADER) + bmih.biSize;
@@ -161,16 +171,32 @@ bool SaveImage(const std::string& szPathName, const std::vector<char>& lpBits, i
 
 	// Write the bitmap file header
 	pFile.write((const char*)&bmfh, sizeof(BITMAPFILEHEADER));
-	UINT nWrittenFileHeaderSize = pFile.tellp();
+	std::streamoff nWrittenFileHeaderSize = pFile.tellp();
 
 	// And then the bitmap info header
 	pFile.write((const char*)&bmih, sizeof(BITMAPINFOHEADER));
-	UINT nWrittenInfoHeaderSize = pFile.tellp();
+	std::streamoff nWrittenInfoHeaderSize = pFile.tellp();
 
 	// Finally, write the image data itself
 	//-- the data represents our drawing
-	pFile.write(&lpBits[0], lpBits.size());
-	UINT nWrittenDIBDataSize = pFile.tellp();
+	std::vector<char> pixel;
+	pixel.reserve(WINSIZEX * WINSIZEY);
+
+	std::vector<XMFLOAT4> colorList = g_HelloMain->GetColorList();
+
+	for (INT y = WINSIZEY - 1; y >= 0; --y)
+	{
+		for (INT x = 0; x < WINSIZEX; ++x)
+		{
+			INT i = (y * WINSIZEX) + x;
+			pixel.push_back(char(colorList[i].z * 255));
+			pixel.push_back(char(colorList[i].y * 255));
+			pixel.push_back(char(colorList[i].x * 255));
+		}
+	}
+	
+	pFile.write(&pixel[0], pixel.size());
+	std::streamoff nWrittenDIBDataSize = pFile.tellp();
 	pFile.close();
 
 	return true;

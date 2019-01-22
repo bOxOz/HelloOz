@@ -11,7 +11,7 @@ public:
 	VOID SetDirToWorld();
 	BOOL IntersectObject();
 
-	static XMFLOAT4 TracePath(Ray* pRay, INT Depth = 1);
+	static XMFLOAT4 TracePath(Ray* pRay, INT& Depth);
 	static XMFLOAT3 RandomUnitVectorInHemisphereOf(const XMFLOAT3& vNormal);
 
 	XMFLOAT2 m_vPixelPos;

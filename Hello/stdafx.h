@@ -12,6 +12,7 @@
 #include <stdlib.h> 
 #include <fstream> 
 #include <crtdbg.h> 
+#include <thread>
 
 #include <windows.h>
 
@@ -38,7 +39,11 @@ extern HelloMain* g_HelloMain;
 #define WINSIZEX 640
 #define WINSIZEY 360
 
-#define DEBUG_RAYCOLOR 0
+#define NUM_SAMPLE 5000
+#define MAX_DEPTH 5
+#define DEBUG_RAYCOLOR _DEBUG
+
+#define NUM_WORKERTHREAD 7
 
 struct Vertex
 {

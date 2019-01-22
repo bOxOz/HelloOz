@@ -77,13 +77,13 @@ void Box::CreateShape(BOOL bBackCull)
 			{ { -fBoxScale, -fBoxScale, fBoxScale },	{ 0.f, -1.f, 0.f } },
 
 			// Y
-			{ { -fBoxScale, fBoxScale, fBoxScale },		{ 0.f, 1.f, 0.f } },
-			{ { fBoxScale, fBoxScale, fBoxScale },		{ 0.f, 1.f, 0.f } },
-			{ { fBoxScale, fBoxScale, -fBoxScale },		{ 0.f, 1.f, 0.f } },
-			
-			{ { -fBoxScale, fBoxScale, fBoxScale },		{ 0.f, 1.f, 0.f } },
-			{ { fBoxScale, fBoxScale, -fBoxScale },		{ 0.f, 1.f, 0.f } },
-			{ { -fBoxScale, fBoxScale, -fBoxScale },	{ 0.f, 1.f, 0.f } }
+			//{ { -fBoxScale, fBoxScale, fBoxScale },		{ 0.f, 1.f, 0.f } },
+			//{ { fBoxScale, fBoxScale, fBoxScale },		{ 0.f, 1.f, 0.f } },
+			//{ { fBoxScale, fBoxScale, -fBoxScale },		{ 0.f, 1.f, 0.f } },
+			//
+			//{ { -fBoxScale, fBoxScale, fBoxScale },		{ 0.f, 1.f, 0.f } },
+			//{ { fBoxScale, fBoxScale, -fBoxScale },		{ 0.f, 1.f, 0.f } },
+			//{ { -fBoxScale, fBoxScale, -fBoxScale },	{ 0.f, 1.f, 0.f } }
 		};
 
 		for (auto vtx : arrVertex)

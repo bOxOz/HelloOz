@@ -32,7 +32,7 @@ BOOL Sphere::Intersect(const Ray& ray, FLOAT& fIntersectDist, XMFLOAT3& vInterse
 
 	FLOAT r2 = powf(m_vScale.x, 2);
 
-	if (s < 0 && (l2 > r2 || r2 == 1.f))
+	if (s < 0 && ((l2 > r2 || fabsf(l2 - r2) < 0.0001f) || r2 == 1.f))
 		return FALSE;
 
 	FLOAT m2 = l2 - powf(s, 2);
