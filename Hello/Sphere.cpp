@@ -48,8 +48,8 @@ BOOL Sphere::Intersect(const Ray& ray, FLOAT& fIntersectDist, XMFLOAT3& vInterse
 		fIntersectDist = s + q;
 
 	vIntersectPos = XMFLOAT3(ray.m_vOrigin.x + fIntersectDist * ray.m_vDirection.x,
-							 ray.m_vOrigin.x + fIntersectDist * ray.m_vDirection.y,
-							 ray.m_vOrigin.x + fIntersectDist * ray.m_vDirection.z);
+							 ray.m_vOrigin.y + fIntersectDist * ray.m_vDirection.y,
+							 ray.m_vOrigin.z + fIntersectDist * ray.m_vDirection.z);
 
 	vIntersectNorm = XMFLOAT3(vIntersectPos.x - m_vPosition.x, vIntersectPos.y - m_vPosition.y, vIntersectPos.z - m_vPosition.z);
 	
