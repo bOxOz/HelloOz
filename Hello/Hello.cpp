@@ -28,7 +28,7 @@ VOID HelloMain::OnInit()
 		INT nQuota = (WINSIZEX * WINSIZEY) / (NUM_WORKERTHREAD + 1);
 		INT iStartPixel = nQuota * (iWorkerThread + 1);
 
-		std::thread* worker = new std::thread(DoPathTracing, iWorkerThread + 1, &m_PixelColorList[iStartPixel]);
+		std::thread* worker = new std::thread(DoPathTracing, iWorkerThread + 1, &m_PixelColorList[0]);
 		workerThread[iWorkerThread] = worker;
 	}
 #endif
@@ -99,12 +99,12 @@ VOID HelloMain::CreateObject()
 	//m_ObjectList.push_back(new Sphere(XMFLOAT3(0.f, -3.f, 0.f), 3.f, XMFLOAT3(1.f, 1.f, 1.f), XMFLOAT3(1.f, 1.f, 1.f)));
 	
 	m_ObjectList.push_back(new Sphere(XMFLOAT3(0.f, -8.5f, 3.5f), 1.5f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(0.f, 0.f, 0.f), 1.f));
-	m_ObjectList.push_back(new Sphere(XMFLOAT3(4.f, -7.7f, 3.6f), 2.3f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(1.f, 0.f, 0.f)));
-	m_ObjectList.push_back(new Sphere(XMFLOAT3(2.f, -9.f, 0.f), 1.f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(1.f, 1.f, 0.f)));
-	m_ObjectList.push_back(new Sphere(XMFLOAT3(-1.f, -9.5f, 0.f), 0.5f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(0.f, 1.f, 0.f)));
-	m_ObjectList.push_back(new Sphere(XMFLOAT3(-2.5f, -9.f, -1.f), 1.f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(0.f, 1.f, 1.f)));
-	m_ObjectList.push_back(new Sphere(XMFLOAT3(-3.8f, -8.f, 3.5f), 2.f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(0.f, 0.f, 1.f)));
-	m_ObjectList.push_back(new Sphere(XMFLOAT3(-2.f, -9.3f, 8.f), 0.7f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(1.f, 0.f, 1.f)));
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(4.f, -7.7f, 3.6f), 2.3f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(1.f, 0.f, 0.f), 0.f));
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(2.f, -9.f, 0.f), 1.f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(1.f, 1.f, 0.f), 0.f));
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(-1.f, -9.5f, 0.f), 0.5f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(0.f, 1.f, 0.f), 0.f));
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(-2.5f, -9.f, -1.f), 1.f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(0.f, 1.f, 1.f), 0.f));
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(-3.8f, -8.f, 3.5f), 2.f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(0.f, 0.f, 1.f), 0.f));
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(-2.f, -9.3f, 8.f), 0.7f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(1.f, 0.f, 1.f), 0.f));
 
 	// Room
 	m_ObjectList.push_back(new Box(XMFLOAT3(0.f, 0.f, 0.f), 20.f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(1.f, 1.f, 1.f), FALSE));
@@ -121,7 +121,7 @@ VOID DoPathTracing(INT iThread, XMFLOAT4* PixelColorList)
 	for (int iPixel = iStartPixel; iPixel < iEndPixel; ++iPixel)
 	{
 		INT nHit = 0;
-		XMFLOAT4 vTotalResult(0.f, 0.f, 0.f, 1.f);
+		XMFLOAT4 vAddResult(0.f, 0.f, 0.f, 1.f);
 
 		for (INT iSample = 0; iSample < NUM_SAMPLE; ++iSample)
 		{
@@ -132,15 +132,12 @@ VOID DoPathTracing(INT iThread, XMFLOAT4* PixelColorList)
 			if (res.x > 0.3f || res.y > 0.3f || res.z > 0.3f)
 			{
 				++nHit;
-				vTotalResult = XMFLOAT4(vTotalResult.x + res.x, vTotalResult.y + res.y, vTotalResult.z + res.z, 1.f);
-#if DEBUG_RAYCOLOR
-				//m_DebugPixelColorList[i].push_back(res);
-#endif
+				vAddResult = XMFLOAT4(vAddResult.x + res.x, vAddResult.y + res.y, vAddResult.z + res.z, 1.f);
 			}
 		}
 
 		if (nHit)
-			PixelColorList[iPixel - iStartPixel] = XMFLOAT4(vTotalResult.x / nHit, vTotalResult.y / nHit, vTotalResult.z / nHit, 1.f);
+			PixelColorList[iPixel] = XMFLOAT4(vAddResult.x / nHit, vAddResult.y / nHit, vAddResult.z / nHit, 1.f);
 	}
 }
 

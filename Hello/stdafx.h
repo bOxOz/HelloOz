@@ -39,8 +39,8 @@ extern HelloMain* g_HelloMain;
 #define WINSIZEX 640
 #define WINSIZEY 360
 
-#define NUM_WORKERTHREAD 0
-#define NUM_SAMPLE 10
+#define NUM_WORKERTHREAD 7
+#define NUM_SAMPLE 100
 #define MAX_DEPTH 5
 
 #define DEBUG_RAYCOLOR _DEBUG

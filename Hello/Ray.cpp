@@ -74,8 +74,21 @@ XMFLOAT4 Ray::TracePath(Ray* pRay, INT& Depth)
 		return WHITE;
 
 	Material material = pRay->m_pHitObj->GetMaterial();
+
+	XMFLOAT3 newDir;
+	if (material.fSpecular > 0.f)
+	{
+		XMVECTOR rayDir = XMLoadFloat3(&pRay->m_vDirection);
+		XMVECTOR objNomral = XMLoadFloat3(&pRay->m_HitNormal);
+		XMFLOAT3 reflectDir;
+		XMStoreFloat3(&reflectDir, rayDir + (2 * objNomral * XMVector3Dot(-rayDir, objNomral)));
+	}
+	else
+	{
+		newDir = RandomUnitVectorInHemisphereOf(pRay->m_HitNormal);
+	}
 	
-	Ray newRay(pRay->m_HitPosition, material.fSpecular > 0.f ? pRay->m_HitNormal : RandomUnitVectorInHemisphereOf(pRay->m_HitNormal));
+	Ray newRay(pRay->m_HitPosition, newDir);
 
 	XMFLOAT4 reflected = XMFLOAT4(0.f, 0.f, 0.f, 0.f);
 
