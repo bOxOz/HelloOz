@@ -11,5 +11,8 @@ public:
 
 	BOOL Intersect(const Ray& ray, FLOAT& fIntersectDist, XMFLOAT3& vIntersectPos, XMFLOAT3& vIntersectNorm);
 	BOOL IntersectP(const Ray& ray, FLOAT& fIntersectDist);
+
+protected:
+	FLOAT m_fRadius;
 };
 

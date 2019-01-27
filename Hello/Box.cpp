@@ -116,7 +116,7 @@ BOOL Box::Intersect(const Ray& ray, FLOAT& fIntersectDist, XMFLOAT3& vIntersectP
 {
 	D3DXVECTOR3 vRayPos, vRayDir;
 	memcpy(&vRayPos, &ray.m_vOrigin, sizeof(D3DXVECTOR3));
-	memcpy(&vRayDir, &ray.m_vDirection, sizeof(D3DXVECTOR3));
+	memcpy(&vRayDir, &ray.m_vDir, sizeof(D3DXVECTOR3));
 
 	FLOAT fDist = 0.f, fMinDist = 1000.f;
 
@@ -153,7 +153,7 @@ BOOL Box::IntersectP(const Ray& ray, FLOAT& fIntersectDist)
 {
 	D3DXVECTOR3 vRayPos, vRayDir;
 	memcpy(&vRayPos, &ray.m_vOrigin, sizeof(D3DXVECTOR3));
-	memcpy(&vRayDir, &ray.m_vDirection, sizeof(D3DXVECTOR3));
+	memcpy(&vRayDir, &ray.m_vDir, sizeof(D3DXVECTOR3));
 
 	FLOAT fDist = 0.f, fMinDist = fIntersectDist;
 

@@ -16,7 +16,7 @@ public:
 
 	XMFLOAT2 m_vPixelPos;
 	XMFLOAT3 m_vOrigin;
-	XMFLOAT3 m_vDirection;
+	XMFLOAT3 m_vDir;
 
 	Primitive*	m_pHitObj;
 	XMFLOAT3	m_HitPosition;

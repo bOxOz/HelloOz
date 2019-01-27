@@ -6,13 +6,13 @@
 #include "Primitive.h"
 
 Ray::Ray(const XMFLOAT2& vPixelPos, const XMFLOAT3& vOrigin)
-	: m_vPixelPos(vPixelPos), m_vOrigin(vOrigin), m_vDirection(XMFLOAT3(0.f, 0.f, 0.f)), m_pHitObj(nullptr)
+	: m_vPixelPos(vPixelPos), m_vOrigin(vOrigin), m_vDir(XMFLOAT3(0.f, 0.f, 0.f)), m_pHitObj(nullptr)
 {
 	SetDirToWorld();
 }
 
 Ray::Ray(const XMFLOAT3& vOrigin, const XMFLOAT3& vDirection)
-	: m_vOrigin(vOrigin), m_vDirection(vDirection)
+	: m_vOrigin(vOrigin), m_vDir(vDirection)
 {
 }
 
@@ -23,16 +23,16 @@ Ray::~Ray()
 VOID Ray::SetDirToWorld()
 {
 	const XMFLOAT4X4& matProj = g_HelloMain->GetCamera()->GetProj();
-	m_vDirection.x = ((m_vPixelPos.x / (WINSIZEX >> 1)) - 1.f) / matProj._11;
-	m_vDirection.y = ((-m_vPixelPos.y / (WINSIZEY >> 1)) + 1.f) / matProj._22;
-	m_vDirection.z = 1.f;
+	m_vDir.x = ((m_vPixelPos.x / (WINSIZEX >> 1)) - 1.f) / matProj._11;
+	m_vDir.y = ((-m_vPixelPos.y / (WINSIZEY >> 1)) + 1.f) / matProj._22;
+	m_vDir.z = 1.f;
 
 	const XMFLOAT4X4& matView = g_HelloMain->GetCamera()->GetView();
 	XMMATRIX matViewInv = XMMatrixInverse(nullptr, XMLoadFloat4x4(&matView));
-	XMVECTOR vRayNormal = XMVector3Normalize(XMLoadFloat3(&m_vDirection));
+	XMVECTOR vRayNormal = XMVector3Normalize(XMLoadFloat3(&m_vDir));
 	vRayNormal = XMVector3TransformNormal(vRayNormal, matViewInv);
 
-	XMStoreFloat3(&m_vDirection, vRayNormal);
+	XMStoreFloat3(&m_vDir, vRayNormal);
 }
 
 BOOL Ray::IntersectObject()
@@ -78,7 +78,7 @@ XMFLOAT4 Ray::TracePath(Ray* pRay, INT& Depth)
 	XMFLOAT3 newDir;
 	if (material.fSpecular > 0.f)
 	{
-		XMVECTOR rayDir = XMLoadFloat3(&pRay->m_vDirection);
+		XMVECTOR rayDir = XMLoadFloat3(&pRay->m_vDir);
 		XMVECTOR objNomral = XMLoadFloat3(&pRay->m_HitNormal);
 		XMFLOAT3 reflectDir;
 		XMStoreFloat3(&reflectDir, rayDir + (2 * objNomral * XMVector3Dot(-rayDir, objNomral)));
@@ -96,7 +96,7 @@ XMFLOAT4 Ray::TracePath(Ray* pRay, INT& Depth)
 		reflected = TracePath(&newRay, ++Depth);
 
 	FLOAT cos_theta = 1.f;
-	XMStoreFloat(&cos_theta, XMVector3Dot(XMLoadFloat3(&newRay.m_vDirection), XMLoadFloat3(&pRay->m_HitNormal)));
+	XMStoreFloat(&cos_theta, XMVector3Dot(XMLoadFloat3(&newRay.m_vDir), XMLoadFloat3(&pRay->m_HitNormal)));
 
 	XMFLOAT3 BRDF = XMFLOAT3(material.vBaseColor.x * cos_theta, material.vBaseColor.y * cos_theta, material.vBaseColor.z * cos_theta);
 	
