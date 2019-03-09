@@ -10,6 +10,7 @@ Box::Box(const XMFLOAT3& vPosition, FLOAT fScale, const XMFLOAT3& vEmittance, co
 
 	m_tMaterial.vEmittance = vEmittance;
 	m_tMaterial.vBaseColor = vColor;
+	m_tMaterial.eType = BxDF_DIFFUSE;
 
 	if (m_tMaterial.vEmittance.x == 0.f && m_tMaterial.vEmittance.y == 0.f && m_tMaterial.vEmittance.z == 0.f)
 		m_tMaterial.bEmitter = FALSE;

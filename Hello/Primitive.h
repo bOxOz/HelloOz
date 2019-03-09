@@ -1,9 +1,15 @@
 #pragma once
 
+enum BxDFTYPE {
+	BxDF_DIFFUSE = 1 << 0,
+	BxDF_REFLECTION = 1 << 1,
+	BxDF_TRANSMISSION = 1 << 2,
+};
+
 struct Material {
 	XMFLOAT3 vEmittance;
 	XMFLOAT3 vBaseColor;
-	FLOAT	 fSpecular;
+	BxDFTYPE eType;
 
 	BOOL bEmitter;
 };

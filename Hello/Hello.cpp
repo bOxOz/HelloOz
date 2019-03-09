@@ -98,13 +98,13 @@ VOID HelloMain::CreateObject()
 	// Sphere
 	//m_ObjectList.push_back(new Sphere(XMFLOAT3(0.f, -3.f, 0.f), 3.f, XMFLOAT3(1.f, 1.f, 1.f), XMFLOAT3(1.f, 1.f, 1.f)));
 	
-	m_ObjectList.push_back(new Sphere(XMFLOAT3(0.f, -8.5f, 3.5f), 1.5f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(0.f, 0.f, 0.f), 1.f));
-	m_ObjectList.push_back(new Sphere(XMFLOAT3(4.f, -7.7f, 3.6f), 2.3f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(1.f, 0.f, 0.f), 0.f));
-	m_ObjectList.push_back(new Sphere(XMFLOAT3(2.f, -9.f, 0.f), 1.f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(1.f, 1.f, 0.f), 0.f));
-	m_ObjectList.push_back(new Sphere(XMFLOAT3(-1.f, -9.5f, 0.f), 0.5f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(0.f, 1.f, 0.f), 0.f));
-	m_ObjectList.push_back(new Sphere(XMFLOAT3(-2.5f, -9.f, -1.f), 1.f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(0.f, 1.f, 1.f), 0.f));
-	m_ObjectList.push_back(new Sphere(XMFLOAT3(-3.8f, -8.f, 3.5f), 2.f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(0.f, 0.f, 1.f), 0.f));
-	m_ObjectList.push_back(new Sphere(XMFLOAT3(-2.f, -9.3f, 8.f), 0.7f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(1.f, 0.f, 1.f), 0.f));
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(0.f, -8.5f, 3.5f), 1.5f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(0.f, 0.f, 0.f), BxDF_REFLECTION));
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(4.f, -7.7f, 3.6f), 2.3f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(1.f, 0.f, 0.f)));
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(2.f, -9.f, 0.f), 1.f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(1.f, 1.f, 0.f)));
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(-1.f, -9.5f, 0.f), 0.5f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(0.f, 1.f, 0.f)));
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(-2.5f, -9.f, -1.f), 1.f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(0.f, 1.f, 1.f)));
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(-3.8f, -8.f, 3.5f), 2.f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(0.f, 0.f, 1.f)));
+	m_ObjectList.push_back(new Sphere(XMFLOAT3(-2.f, -9.3f, 8.f), 0.7f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(1.f, 0.f, 1.f)));
 
 	// Room
 	m_ObjectList.push_back(new Box(XMFLOAT3(0.f, 0.f, 0.f), 20.f, XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT3(1.f, 1.f, 1.f), FALSE));

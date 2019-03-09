@@ -67,42 +67,65 @@ BOOL Ray::IntersectObject()
 
 XMFLOAT4 Ray::TracePath(Ray* pRay, INT& Depth)
 {
+	// Bounce limit
 	if (Depth > MAX_DEPTH)
 		return BLACK;
 	
+	// Intersect Object
 	if (pRay->IntersectObject() == FALSE)
 		return WHITE;
 
 	Material material = pRay->m_pHitObj->GetMaterial();
 
+	// Create newRay
 	XMFLOAT3 newDir;
-	if (material.fSpecular > 0.f)
+
+	if (material.eType & BxDF_DIFFUSE)
+	{
+		newDir = RandomUnitVectorInHemisphereOf(pRay->m_HitNormal);
+	}
+	else if (material.eType & BxDF_REFLECTION)
 	{
 		XMVECTOR rayDir = XMLoadFloat3(&pRay->m_vDir);
 		XMVECTOR objNomral = XMLoadFloat3(&pRay->m_HitNormal);
-		XMFLOAT3 reflectDir;
-		XMStoreFloat3(&reflectDir, rayDir + (2 * objNomral * XMVector3Dot(-rayDir, objNomral)));
+
+		XMStoreFloat3(&newDir, XMVector3Reflect(rayDir, objNomral));
 	}
-	else
+	else if (material.eType & BxDF_TRANSMISSION)
 	{
-		newDir = RandomUnitVectorInHemisphereOf(pRay->m_HitNormal);
+		XMVECTOR rayDir = XMLoadFloat3(&pRay->m_vDir);
+		XMVECTOR objNomral = XMLoadFloat3(&pRay->m_HitNormal);
+
+		extern thread_local BOOL bInRay;		
+		XMStoreFloat3(&newDir, XMVector3Refract(rayDir, objNomral, bInRay ? 1.5f / 1.f : 1.f / 1.5f)); // air IOR 1, glass IOR 1.5
 	}
 	
 	Ray newRay(pRay->m_HitPosition, newDir);
 
+	// Bounce
 	XMFLOAT4 reflected = XMFLOAT4(0.f, 0.f, 0.f, 0.f);
 
 	if(material.bEmitter == FALSE)
 		reflected = TracePath(&newRay, ++Depth);
 
-	FLOAT cos_theta = 1.f;
-	XMStoreFloat(&cos_theta, XMVector3Dot(XMLoadFloat3(&newRay.m_vDir), XMLoadFloat3(&pRay->m_HitNormal)));
+	// Compute result color
+	XMFLOAT4 res = XMFLOAT4(0.f, 0.f, 0.f, 0.f);
 
-	XMFLOAT3 BRDF = XMFLOAT3(material.vBaseColor.x * cos_theta, material.vBaseColor.y * cos_theta, material.vBaseColor.z * cos_theta);
-	
-	XMFLOAT4 res = XMFLOAT4(min(material.vEmittance.x + ((BRDF.x * reflected.x) * (1.f - material.fSpecular)) + (reflected.x * material.fSpecular), 1.f),
-							min(material.vEmittance.y + ((BRDF.y * reflected.y) * (1.f - material.fSpecular)) + (reflected.y * material.fSpecular), 1.f),
-							min(material.vEmittance.z + ((BRDF.z * reflected.z) * (1.f - material.fSpecular)) + (reflected.z * material.fSpecular), 1.f), 1.f);
+	if (material.eType & BxDF_DIFFUSE)
+	{
+		FLOAT cos_theta = 1.f;
+		XMStoreFloat(&cos_theta, XMVector3Dot(XMLoadFloat3(&newRay.m_vDir), XMLoadFloat3(&pRay->m_HitNormal)));
+
+		res = XMFLOAT4(min(material.vEmittance.x + (material.vBaseColor.x * cos_theta * reflected.x), 1.f),
+					   min(material.vEmittance.y + (material.vBaseColor.y * cos_theta * reflected.y), 1.f),
+					   min(material.vEmittance.z + (material.vBaseColor.z * cos_theta * reflected.z), 1.f), 1.f);
+	}
+	else
+	{
+		res = XMFLOAT4(min(material.vEmittance.x + reflected.x, 1.f),
+					   min(material.vEmittance.y + reflected.y, 1.f),
+					   min(material.vEmittance.z + reflected.z, 1.f), 1.f);
+	}
 
 	return res;
 }
